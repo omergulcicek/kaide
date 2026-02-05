@@ -1,0 +1,79 @@
+---
+description: "UI ve bileşen geliştirme standartları. Shadcn, Tailwind ve Atomik Mimari kurallarını AI kod üretimi için zorunlu kılar."
+globs: "src/components/**/*.{ts,tsx}, src/features/**/components/**/*.{ts,tsx}"
+alwaysApply: true
+---
+
+# UI ve Bileşen Üretim Kuralları
+
+Bileşenleri oluştururken veya düzenlerken bu talimatları kesinlikle takip et.
+
+## 1. Bileşen Yerleşimi (Katı Hiyerarşi)
+- **Atomik (src/components/ui/):** Yalnızca saf, state tutmayan (stateless), shadcn tabanlı temel bileşenler. API veya Global Store bağımlılığı olamaz.
+- **Paylaşılan (src/components/shared/):** Birden fazla feature tarafından kullanılan fonksiyonel yapılar (Örn: `DataTable`, `FileUpload`).
+- **Feature (src/features/[name]/components/):** İş mantığı içeren, domaine özel bileşenler.
+
+## 2. Stil Protokolü
+- **Sadece Tailwind:** Stil işlemleri için yalnızca Tailwind CSS sınıflarını kullan.
+- **Sınıf Birleştirme:** Koşullu sınıflar için her zaman `@/lib/utils` içindeki `cn()` yardımcı fonksiyonunu kullan.
+- **Mobil Öncelik:** Sınıfları mobil öncelikli (mobile-first) sırayla uygula (Örn: `p-4 md:p-8`).
+- **Tasarım Tokenları:** Sabit hex/rgb değerleri yerine tema değişkenlerini (Örn: `text-primary`, `bg-background`) kullan.
+- **UI Bütünlüğü:** Açıkça istenmediği sürece varsayılan shadcn stillerini değiştirme. Tasarım sistemi tutarlılığını koru.
+
+## 3. Uygulama Standartları
+- **Exportlar:** Sadece **Named Export** kullan. Asla `default export` kullanma.
+- **Proplar:** Bileşen proplarını TypeScript `type` kullanarak tanımla.
+- **İkonlar:** Sadece **Lucide React** ikonlarını kullan. Varsayılan boyut: `size={16}`. `aria-hidden="true"` ekle.
+- **Bildirimler:** Tüm toast bildirimleri için **Shadcn Sonner** kullan.
+
+## 4. Next.js ve Etkileşim Sınırları
+- **Varsayılan:** Tüm bileşenler varsayılan olarak **Server Component**'tir.
+- **Client Direktifi:** `"use client"` direktifini, yalnızca hook (useState, useEffect) veya event listener (onClick) gerektiğinde, mümkün olan en küçük yaprak bileşene (leaf component) ekle.
+- **Veri Çekme:** İlk sayfa yüklemesindeki (initial load) verileri Server Component'lerde çek ve proplarla aktar; ancak kullanıcı etkileşimi (tıklama, form gönderimi vb.) gerektiren dinamik veri işlemlerini Client Component'lerde TanStack Query kullanarak yönet.
+
+## 5. Form Mimarisi
+- **Bileşenler:** Formları `@/components/ui` altındaki atomik bileşenleri kullanarak inşa et.
+- **Doğrulama:** Projede belirtilen **Zod** ve **React Hook Form** (veya TanStack Form) entegrasyonunu sağla.
+- **Shadcn Pattern:** Resmi Shadcn form desenini sıkı bir şekilde takip et (`FormField` sarmalayıcıları, `FormItem`, `FormLabel`, `FormMessage`).
+- **Semantik:** Erişilebilirlik (A11y) için tüm inputların etiketler (labels) ve hata mesajlarıyla programatik olarak bağlandığından emin ol.
+
+## 6. Yükleme Durumları (Skeletons)
+- **Zorunlu:** Asenkron veri tüketen her bileşen için bir `[ComponentName]Skeleton` oluştur.
+- **Temel Yapı:** `@/components/ui/skeleton` bileşenini kullan.
+- **Yerleşim Uyumu:** Skeleton'lar, orijinal bileşenin düzeni (layout), boyutları ve boşluklarıyla (spacing) birebir eşleşmelidir.
+
+## 7. Erişilebilirlik (A11y) Komutları
+- **Semantik:** Ana bölümler için anlamlı etiketler (`<main>`, `<nav>`, `<aside>`, `<section>`, `<article>` vb) kullan. Düzen ve stil amaçlı sarmalayıcılar için `<div>` kullanmaya devam et; ancak içeriği tanımlayan temel iskeletin semantik olmasını sağla.
+- **Odak (Focus):** Odaklanabilir öğelerin görünür odak durumlarına (focus states) sahip olduğundan emin ol.
+- **Temeller:** Erişilebilirlik özelliklerini miras almak için unstyled primitives (Radix UI / Base UI) üzerine inşa et.
+
+## 8. Good vs Bad Examples
+
+### Component Composition
+```tsx
+// ❌ Bad - Bağımlı ve esnek olmayan yapı
+export const ProfileCard = ({ name }: { name: string }) => (
+  <div className="p-4 bg-white"> {name} </div>
+);
+
+// ✅ Good - Shared ve UI bileşenlerini kullanan modüler yapı
+import { Card } from "@/components/ui/card";
+
+export const ProfileCard = ({ name, children }: ProfileCardProps) => {
+  return (
+    <Card className="p-4">
+      <h3>{name}</h3>
+      {children}
+    </Card>
+  );
+};
+```
+
+### Class Merging
+```tsx
+// ❌ Bad - String birleştirme hataya açıktır
+<div className={`p-4 ${active ? 'bg-blue-500' : 'bg-gray-500'}`} />
+
+// ✅ Good - cn() ile güvenli birleştirme
+<div className={cn("p-4", active ? "bg-blue-500" : "bg-gray-500")} />
+```
