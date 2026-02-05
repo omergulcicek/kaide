@@ -1,0 +1,68 @@
+---
+description: "Proje genelindeki mutlak kurallar ve evrensel çalışma prensipleri. Her zaman geçerlidir ve tüm kuralların temelidir."
+globs: "**/*.{ts,tsx,js,jsx,json,md,css}"
+alwaysApply: true
+---
+
+# Core Constitution (Ana Anayasa)
+
+Bu dosya, proje genelinde geçerli olan en üst düzey davranış, değişiklik ve kalite prensiplerini tanımlar. Tüm işlemlerde bu kurallar önceliklidir.
+
+## 1. Modification Principles (Değişiklik İlkeleri)
+- **Search-First (Önce Araştır):** Yeni kod yazmadan önce mevcut pattern’leri incele. Tekerleği yeniden icat etmek yerine projedeki yerleşik çözümleri takip et.
+- **Folder Structure (Klasör Yapısı):** Yeni bir dizin oluşturmadan önce `docs/architecture.md` dosyasını kontrol et ve mevcut hiyerarşiye sadık kal.
+- **Minimal Intervention (Minimum Müdahale):** Sadece gerekli alanı değiştir. İlgisiz kodları taşıma veya kapsam dışı geniş refactor işlemlerinden kaçın.
+- **No Placeholders (Yer Tutucu Yasağı):** Kod bloklarında `// ... existing code` kullanma. Değişiklikleri her zaman eksiksiz ve çalışır şekilde sun.
+- **Truth Prioritization (Gerçeklik Önceliği):** Mevcut kodu birincil rehber olarak kullan. Mantık hatası veya standart dışı yapı fark edersen en iyi pratiklere başvur ve kullanıcıyı uyar.
+
+## 2. Housekeeping & Clean Code (Temizlik ve Temiz Kod)
+- **Boy Scout Rule (İzci Kuralı):** Dokunulan her dosyayı bulduğundan daha temiz bırak. Kullanılmayan import’ları, `console.log` ifadelerini ve ölü kodları temizle.
+- **Naming (İsimlendirme):** Tüm dosya ve klasör isimleri `kebab-case` olmalıdır.
+- **Clarity Over Complexity (Sadelik Önceliği):** Kod yalnızca çalışır değil; okunabilir ve sürdürülebilir olmalıdır. Akıllıca ama karmaşık çözümler yerine sade ve açık olanı tercih et.
+
+## 3. Decision & Communication (Karar ve İletişim)
+- **No Assumptions (Varsayım Yapma):** Gereksinimler belirsizse varsayımda bulunma; kısa ve net sorular sorarak netlik kazan.
+- **Direct & Technical (Doğrudan ve Teknik):** Gereksiz övgü veya dolgu cümleleri kullanma. Saf teknik gerçeklere ve aksiyonlara odaklan.
+- **Explain When It Matters (Gerektiğinde Açıkla):** Mimari veya kritik karar noktalarında çözümün mantığını kısa ve net şekilde açıkla.
+
+## 4. Error & Security Boundaries (Hata ve Güvenlik Sınırları)
+- **Explicit Error Handling (Açık Hata Yönetimi):** Hataları asla sessizce yutma. Her zaman anlaşılır ve izlenebilir hata yönetimi yapıları kullan.
+- **Secret Protection (Gizli Bilgi Koruması):** `.env` ve benzeri gizli dosyaların içeriğini asla ifşa etme, çıktı olarak verme veya chat geçmişine yansıtma.
+- **Dependency Awareness (Bağımlılık Bilinci):** Yeni paket eklemeden önce mevcut çözümleri kontrol et. Gerekliyse onay iste.
+
+## 5. Validation & Version Control (Doğrulama ve Kontrol)
+- **Deterministic Validation (Kesin Doğrulama):** Değişiklik sonrası varsa linter veya type-check komutlarını çalıştırarak standartlara uyumu doğrula.
+- **Conventional Commits (Standart Commitler):** Değişiklikler için `feat:`, `fix:`, `refactor:`, `chore:` formatında kısa ve açıklayıcı **İngilizce** mesajlar hazırla.
+
+## 6. Architectural Examples (Good vs Bad) (Mimari Örnekler)
+
+### Logic & Handling (Mantık Yönetimi)
+```js
+// ❌ Bad — Sessiz hata yönetimi ve belirsiz davranış
+try { process(data); } catch (e) {}
+
+// ✅ Good — Açık ve izlenebilir hata yönetimi
+try {
+  process(data);
+} catch (error) {
+  throw new ProcessingError({ cause: error });
+}
+```
+
+### Modification Style (Modifikasyon Stili)
+```js
+// ❌ Bad — Yer tutucu (Placeholder) kullanımı
+export const Header = () => {
+  // ... existing code
+  return <nav>New Link</nav>;
+};
+
+// ✅ Good — Eksiksiz ve çalışır kod sunumu
+export const Header = () => {
+  return (
+    <header>
+      <Logo />
+      <nav>New Link</nav>
+    </header>
+  );
+};
