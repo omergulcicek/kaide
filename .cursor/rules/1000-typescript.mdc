@@ -1,0 +1,257 @@
+---
+description: "TypeScript uygulama standartları ve tip güvenliği kuralları. .ts ve .tsx dosyalarında her zaman uygulanır."
+globs: "**/*.{ts,tsx}"
+alwaysApply: true
+---
+
+# TypeScript Standards (Frontend Architect Edition)
+
+Bu doküman, projede maksimum type-safety, sürdürülebilirlik ve ölçeklenebilirlik sağlamak için zorunlu kuralları tanımlar.
+
+## 1) Type Definition Strategy
+
+### Hybrid Model (Zorunlu)
+- **interface**
+  - API yanıtları (DTO)
+  - Domain modelleri
+  - Dışa açılan public contract’lar
+  - Extend edilmesi beklenen yapılar
+- **type**
+  - Component Props
+  - State yapıları
+  - Union / Intersection
+  - Utility ve mapped types
+  - Function signatures
+
+### Naming
+- Prefix kullanma.
+  - ❌ `IUser`, `TUser`
+  - ✅ `User`
+
+## 2) Data Modeling Rules
+
+### Array Tanımı
+- Her zaman kısa sözdizimi: `T[]`
+- `Array<T>` sadece nested generic zorunluluğunda kullanılabilir.
+
+```ts
+const users: User[] = []
+```
+
+### Enum Kullanımı
+- Native `enum` yasak.
+- Literal / Union zorunlu.
+
+```ts
+type Status = 'active' | 'inactive'
+```
+
+### Const Assertions
+Değişmeyecek sabitlerde `as const` kullan.
+
+```ts
+const ROLES = ['admin', 'user'] as const
+type Role = (typeof ROLES)[number]
+```
+
+### Discriminated Union (State için zorunlu pattern)
+
+```ts
+type Result<T> =
+  | { type: 'success'; data: T }
+  | { type: 'error'; message: string }
+  | { type: 'loading' }
+```
+
+## 3) Immutability First
+
+Varsayılan yaklaşım: immutable data.
+
+- `readonly`
+- `Readonly<T>`
+- `as const`
+
+```ts
+type User = Readonly<{
+  id: string
+  name: string
+}>
+```
+
+State mutation pattern’leri yasak.
+
+## 4) Strictness & Safety
+
+### Any Policy
+- `any` yasak.
+- Alternatifler:
+  - `unknown`
+  - generic
+  - doğru modelleme
+
+### Type Casting Policy
+- `as` kaçınılmalı.
+- Sadece:
+  - 3rd-party uyumsuzluk
+  - runtime doğrulama sonrası
+- Zorunluysa `// eslint-disable-line` ile sınırla.
+
+```ts
+const value = thirdParty as unknown as DesiredType // eslint-disable-line
+```
+
+### Explicit Return Types (Zorunlu)
+Export edilen tüm fonksiyonların dönüş tipi yazılır.
+
+```ts
+export function getUser(): Promise<User> {
+  return api.get<User>('/user')
+}
+```
+
+### Null Safety
+- Optional alanlar: `?`
+- Güvenli erişim: `?.`, `??`
+
+```ts
+const city = user.address?.city ?? 'unknown'
+```
+
+## 5) Type Boundaries (Kritik)
+
+API → Domain dönüşümü zorunlu. DTO tipi UI içinde doğrudan kullanılmaz.
+
+```ts
+export interface UserDTO {
+  id: string
+  full_name: string
+}
+
+export interface User {
+  id: string
+  name: string
+}
+
+export function mapUser(dto: UserDTO): User {
+  return { id: dto.id, name: dto.full_name }
+}
+```
+
+## 6) Unknown First Strategy
+
+Dış veri:
+- önce `unknown`
+- sonra parse/validate
+- sonra modele çevir
+
+```ts
+export function parseUser(data: unknown): User {
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
+    'name' in data
+  ) {
+    const d = data as { id: string; name: string }
+    return { id: d.id, name: d.name }
+  }
+
+  throw new Error('Invalid user')
+}
+```
+
+## 7) Type Guards (Zorunlu)
+
+Union ayrımı için custom guard yaz.
+
+```ts
+type Admin = User & { permissions: string[] }
+
+export function isAdmin(user: User | Admin): user is Admin {
+  return 'permissions' in user
+}
+```
+
+## 8) Advanced Type Safety
+
+### Branded Types (Domain kritik alanlar)
+
+```ts
+export type UserId = string & { readonly brand: 'UserId' }
+
+export function asUserId(id: string): UserId {
+  return id as UserId
+}
+```
+
+### satisfies (TS 4.9+)
+Shape kontrolü için kullan.
+
+```ts
+type ApiConfig = { retry: number; timeout: number }
+
+export const config = {
+  retry: 3,
+  timeout: 5000
+} satisfies ApiConfig
+```
+
+## 9) Generics Standards
+
+Constraint kullan.
+
+```ts
+export function getKey<T extends object, K extends keyof T>(obj: T, key: K): T[K] {
+  return obj[key]
+}
+```
+
+Genel güvenli sınır:
+```ts
+type AnyObject = Record<string, unknown>
+```
+
+## 10) Error Prevention Rules
+
+- Magic string yasak → literal type üret.
+- Derin state tipleri `Readonly` ile korunur.
+- Props tipleri her zaman `type` ile tanımlanır.
+- Public helper’larda return type zorunlu.
+
+## 11) Good vs Bad
+
+### Naming
+```ts
+// ❌
+interface IUser { name: string }
+
+// ✅
+interface User { name: string }
+```
+
+### Any
+```ts
+// ❌
+const data: any = response.data
+
+// ✅
+const data: unknown = response.data
+```
+
+### Enum
+```ts
+// ❌
+enum Role { Admin, User }
+
+// ✅
+type Role = 'admin' | 'user'
+```
+
+### Immutable Model
+```ts
+// ❌
+type User = { name: string }
+
+// ✅
+type User = Readonly<{ name: string }>
+```
