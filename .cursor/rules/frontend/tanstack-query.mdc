@@ -73,6 +73,33 @@ Bu doküman, server-state yönetimi için zorunlu uygulama standartlarını içe
   };
   ```
 
+### Aborting Requests (Zorunlu)
+
+* **Amaç:** Filtreleme yapılan, hızlı sayfa geçişi olan veya component unmount edilen durumlarda gereksiz isteklerin iptal edilmesi gerekir.
+
+* **Kural:** TanStack Query tarafından sağlanan `signal` parametresi `queryFn` üzerinden API katmanına aktarılmalıdır.
+
+* **API Fonksiyonu:** `AbortSignal` destekleyecek şekilde yazılmalıdır.
+
+```ts
+// src/features/posts/api/get-posts.ts
+export const getPosts = async (params?: { signal?: AbortSignal }) => {
+  const { data } = await axios.get('/api/posts', {
+    signal: params?.signal,
+  });
+
+  return data;
+};
+
+// src/features/posts/hooks/use-get-posts.ts
+export const useGetPosts = () => {
+  return useQuery({
+    queryKey: postKeys.list(),
+    queryFn: ({ signal }) => getPosts({ signal }),
+  });
+};
+```
+
 ## 4. Pagination & Infinite Query Standardı
 
 * **Pagination:** Sayfalı veri yapılarında `page` parametresi query key içine dahil edilmelidir.
