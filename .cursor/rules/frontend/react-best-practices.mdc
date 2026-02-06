@@ -1,0 +1,61 @@
+---
+description: React bileşenleri ve hook'ları oluştururken veya refactor ederken performans, tip güvenliği ve mimari tutarlılık için kullan.
+globs: src/components/**/*.{ts,tsx},src/hooks/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# React Teknik Yasaları
+
+## 1. Bileşen Mimarisi (Temel Kurallar)
+- **SRP Zorunluluğu:** Bir bileşen yalnızca bir sorumluluk üstlenmelidir. 150 satırı aşan bileşenleri alt bileşenlere ayır.
+- **Props Composition:** 2 seviyeden derin prop aktarımları (drilling) yerine `children` veya slot yapısını kullan.
+- **İsimlendirme:** Dosya ve bileşen isimlerinde PascalCase, hook'larda camelCase kullan. `index.tsx` dosyalarından kaçın.
+
+## 2. Hook'lar ve Mantık Ayrıştırma
+- **Mantık Soyutlama:** UI dışı tüm karmaşık mantığı custom hook'lara taşı.
+- **Bağımlılık Yönetimi:** `exhaustive-deps` kuralını asla kapatma. Bağımlılık dizilerinde (dependency arrays) mümkünse sadece primitive değerler kullan.
+- **Stale Closure Önleme:** Yeni state eski state'e bağlıysa `setState(prev => ...)` (functional update) kullan.
+
+## 3. Performans Bariyerleri
+- **Memoization Stratejisi:** Ağır hesaplamalar (>1ms) için `useMemo`, memoize edilmiş alt bileşenlere aktarılan fonksiyonlar için `useCallback` kullan.
+- **Render Sınırlandırma:** State'i her zaman kullanım noktasına en yakın (en alt) seviyede tut.
+- **Anonim Fonksiyonlar:** Gereksiz re-render'ı önlemek için JSX içinde anonim fonksiyon tanımlamaktan kaçın.
+
+## 4. State ve Veri Akışı
+- **Sıfır Yedeklilik:** Props değerlerini state'e eşitleme. Bunun yerine türetilmiş değişkenler (derived state) kullan.
+- **State Lifting:** State'i sadece en yakın ortak ataya kadar yükselt.
+- **Immutability:** State veya props değerlerini asla doğrudan mutate etme. Karmaşık nesneler için `immer` kullan.
+
+## 5. Görsel Yapı (JSX/TSX)
+- **Semantik Etiketler:** `<main>`, `<section>`, `<nav>`, `<button>` kullan. Tıklanabilir öğeler için `<div>` kullanma.
+- **Fragments:** DOM kirliliğini önlemek için `<>...</>` (Fragments) kullan.
+- **Koşullu Render:** Basit görünürlük kontrolleri için `{condition && <Component />}`; A/B mantığı için ternary operatörü kullan.
+
+## 6. Hatalı vs. Doğru Örnekler
+
+<incorrect-example>
+// Bileşen içinde mantık + Prop drilling
+function UserProfile({ id, theme, onUpdate }) {
+  const [data, setData] = useState(null);
+  useEffect(() => { fetchUser(id).then(setData); }, [id]);
+  
+  return <div onClick={() => onUpdate(data)} style={{color: theme}}>...</div>;
+}
+</incorrect-example>
+
+<correct-example>
+// Mantık hook'a çıkarılmış + Semantik HTML + Functional Update
+function UserProfile({ id, onUpdate }) {
+  const { data } = useUserData(id); // Custom hook kullanımı
+  
+  return (
+    <button type="button" onClick={() => onUpdate(prev => ({...prev, ...data}))}>
+      {data.name}
+    </button>
+  );
+}
+</correct-example>
+
+## 7. Operasyonel Bağlantılar
+- Klasör yapısı standartları için `docs/architecture-guide.md` dosyasına bak.
+- Geçmiş mimari kararlar için `docs/MEMORIES.md` dosyasını kontrol et.
