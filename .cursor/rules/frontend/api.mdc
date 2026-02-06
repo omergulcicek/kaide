@@ -1,0 +1,355 @@
+---
+description: "Merkezi axios API katmanı. Interceptor, error modeli, auth refresh, pagination ve TanStack Query entegrasyon kurallarını tanımlar."
+globs: "src/lib/api.ts, src/features/**/api/*.{ts,tsx}"
+alwaysApply: true
+---
+
+## Amaç
+
+Tekil, merkezi, deterministik, type-safe HTTP katmanı.
+Tüm istekler tek axios instance üzerinden yürütülür.
+UI ve Query katmanı yalnızca feature API fonksiyonlarını tüketir.
+
+Referanslar:
+
+* Query davranışı → `tanstack-query.mdc`
+* Tip stratejisi → `typescript.mdc`
+
+## Instance Standardı
+
+Konum:
+
+```
+src/lib/api.ts
+```
+
+Kurallar:
+
+* Tek `axios.create`
+* Başka yerde instance oluşturulmaz
+* fetch kullanılmaz
+* Tüm feature’lar aynı instance’ı import eder
+
+Import path:
+
+```
+@/lib/api
+```
+
+## Base URL & Env
+
+* Base URL env üzerinden alınır
+* Instance içinde tanımlanır
+* Feature içinde URL birleştirme yapılmaz
+
+## Interceptor Mimarisi
+
+Projede yoksa kurulur ve tüm sistem bunun üzerinden ilerler.
+
+### request interceptor
+
+Sorumluluklar:
+
+* Authorization header
+* Locale / platform metadata
+* Tenant bilgisi (varsa)
+* Idempotency / trace header
+* Request normalize
+
+### response interceptor
+
+Sorumluluklar:
+
+* Response unwrap
+* Error normalize
+* 401 handling
+* Token refresh akışı
+* Retry kararı (network / 5xx)
+
+Token refresh:
+
+* Paralel 401’ler tek refresh ile çözülür
+* Refresh başarısızsa global logout tetiklenir
+
+## Error Modeli (Standart)
+
+Tüm hatalar tek shape’e dönüştürülür:
+
+```
+ApiError {
+  code: string
+  message: string
+  status: number
+  details?: unknown
+}
+```
+
+UI katmanı raw axios error almaz.
+
+## Yerleşim
+
+Tüm endpoint fonksiyonları:
+
+```
+features/[feature]/api/
+```
+
+Örnek:
+
+```
+features/user/api/
+  get-user.api.ts
+  get-users.api.ts
+  create-user.api.ts
+  update-user.api.ts
+  delete-user.api.ts
+```
+
+Component içinde HTTP çağrısı yazılmaz.
+
+## Naming Convention
+
+Fiil tabanlı:
+
+* getUser
+* getUsers
+* createUser
+* updateUser
+* deleteUser
+
+Dosya:
+
+```
+verb-entity.api.ts
+```
+
+## Fonksiyon Standardı
+
+Her API fonksiyonu:
+
+* Tek endpoint’i temsil eder
+* Endpoint string sadece burada bulunur
+* Typed Promise döner
+* Axios instance kullanır
+
+Return shape:
+
+```
+Promise<ApiResponse<T>>
+```
+
+`any` yasaktır.
+
+## TanStack Query Entegrasyonu
+
+Kurallar:
+
+* Query katmanı axios kullanmaz
+* Sadece API fonksiyonlarını çağırır
+* Endpoint bilmez
+
+Mapping:
+
+* GET → query
+* POST → mutation
+* PUT/PATCH → mutation
+* DELETE → mutation
+
+Query key ve cache davranışı:
+→ `tanstack-query.mdc`
+
+## Cache Invalidation Stratejisi
+
+Mutation sonrası:
+
+* İlgili entity query key invalidate edilir
+* Liste + detay birlikte düşünülür
+* Invalidate kararı UI içinde değil, query layer içinde verilir
+
+## Pagination Standardı
+
+Liste endpoint’leri parametreleri:
+
+* page
+* limit
+* sort
+* filters
+
+Response shape:
+
+```
+{
+  items: T[]
+  total: number
+  page: number
+  limit: number
+}
+```
+
+Parsing API katmanında yapılır.
+
+## Upload / Download Standardı
+
+Upload:
+
+* multipart/form-data
+* Content-Type interceptor dışında set edilmez
+
+Download:
+
+* blob responseType
+* Dosya parsing API katmanında yapılır
+
+## Type Safety
+
+* Response tipleri `features/[feature]/types`
+* Zod varsa API dönüşünde parse edilir
+* Runtime validation API katmanında çözülür
+* UI raw response işlemez
+
+→ `typescript.mdc`
+
+## Server / Client Boundary
+
+Aynı API fonksiyonları:
+
+* Client: TanStack Query
+* Server: serverFn / route handler
+
+Secret logic sadece server boundary içinde.
+
+## Yasaklar
+
+* fetch kullanımı
+* Feature içinde axios.create
+* Component içinde HTTP çağrısı
+* Query içinde endpoint string
+* Interceptor’ı feature içine koymak
+* Raw axios error taşımak
+* Base URL’i feature içinde birleştirmek
+
+## Guardrails — Negatif Örnekler
+
+Aşağıdaki yanlış kullanım kalıpları üretilmemelidir.
+
+### Yeni axios instance oluşturmak (YANLIŞ)
+
+<incorrect-example>
+
+```ts
+// features/user/api/get-user.api.ts
+import axios from "axios"
+
+export const getUser = async () => {
+  const api = axios.create({ baseURL: "/api" }) // ❌ yasak
+  return api.get("/users/me")
+}
+```
+
+</incorrect-example>
+
+### fetch kullanmak (YANLIŞ)
+
+<incorrect-example>
+
+```ts
+export const getUser = async () => {
+  const res = await fetch("/api/users/me") // ❌ yasak
+  return res.json()
+}
+```
+
+</incorrect-example>
+
+### Component içinde HTTP çağrısı yapmak (YANLIŞ)
+
+<incorrect-example>
+
+```tsx
+"use client"
+import { useEffect } from "react"
+import axios from "axios"
+
+export function Profile() {
+  useEffect(() => {
+    axios.get("/api/users/me") // ❌ yasak
+  }, [])
+
+  return null
+}
+```
+
+</incorrect-example>
+
+### Query içinde direkt axios kullanmak (YANLIŞ)
+
+<incorrect-example>
+
+```ts
+useQuery({
+  queryKey: ["user"],
+  queryFn: () => axios.get("/users/me"), // ❌ yasak
+})
+```
+
+</incorrect-example>
+
+### Endpoint string’i query katmanına koymak (YANLIŞ)
+
+<incorrect-example>
+
+```ts
+useQuery({
+  queryKey: ["user"],
+  queryFn: () => api.get("/users/me"), // ❌ yasak
+})
+```
+
+</incorrect-example>
+
+### Interceptor’ı feature içinde tanımlamak (YANLIŞ)
+
+<incorrect-example>
+
+```ts
+// features/auth/api/login.api.ts
+import api from "@/lib/api"
+
+api.interceptors.response.use(() => {}) // ❌ yasak
+```
+
+</incorrect-example>
+
+### Base URL’i feature içinde birleştirmek (YANLIŞ)
+
+<incorrect-example>
+
+```ts
+export const getUser = () => {
+  return api.get(process.env.API_URL + "/users/me") // ❌ yasak
+}
+```
+
+</incorrect-example>
+
+### any kullanmak (YANLIŞ)
+
+<incorrect-example>
+
+```ts
+export const getUser = async (): Promise<any> => { // ❌ yasak
+  return api.get("/users/me")
+}
+```
+
+</incorrect-example>
+
+## Mimari Prensipler
+
+* Tek HTTP giriş noktası
+* Tek interceptor zinciri
+* Feature-based endpoint organizasyonu
+* End-to-end type safety
+* Deterministik error modeli
+* Query katmanı sadece tüketici
+* Ölçeklenebilir, tekrar üretilebilir, AI-stable yapı
