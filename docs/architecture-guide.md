@@ -16,13 +16,61 @@
   * Next.js → Server Actions / Route Handlers
   * TanStack Start → serverFn
 
-## Overview
+## Framework Boundaries (Next.js vs TanStack Start)
 
-Feature-based (domain-driven) mimari. Hem Next.js hem TanStack Start ile uyumlu. Framework farkı yalnızca routing katmanındadır:
+Bu proje framework-agnostic değildir. Next.js App Router ve TanStack Start farklı rendering ve data-fetching semantiklerine sahiptir.
+Ortaklaştırma sadece aşağıdaki katmanlarda yapılır:
 
-* Next.js: `src/app/`
-* TanStack Start: `src/routes/`
-  Diğer tüm yapı ortaktır.
+* Domain + validation: `shared/schemas` (Zod), saf TS utils (framework import yok)
+* API contracts: request/response shape, error mapping, typed clients
+* UI primitives: shadcn/ui + design tokens (routing/rendering bağımlılığı yok)
+
+Framework-spesifik kabul edilen ve ortak wrapper YAZILMAYACAK alanlar:
+
+* Rendering modeli:
+  * Next: RSC, Server Components, streaming, segment config
+  * Start: client/server component ayrımı farklı lifecycle ile çalışır
+* Data fetching + caching:
+  * Next: server prefetch, RSC cache, revalidation davranışı
+  * Start: loader/serverFn lifecycle, hydration modeli
+* Mutations:
+  * Next: Server Actions
+  * Start: serverFn
+* Routing/layout:
+  * Next: App Router layouts/segments
+  * Start: file-based routing + loaders
+
+Kural: Bu başlıktaki alanlar Shared katmana taşınmaz ve tek bir abstraction altında birleştirilmez.
+Framework davranışı ilgili feature içinde, native pattern ile uygulanır.
+
+## Rule Index (Canonical Refs)
+
+Bu doküman sadece “mimari harita”dır. Uygulanabilir kurallar aşağıdaki MDC dosyalarındadır.
+Her kural ifadesi **Ref:** ile buraya bağlanmak zorundadır. Ref olmayan kural = geçersiz.
+
+* Ref: `.cursor/rules/core-principles.mdc`
+* Ref: `.cursor/rules/frontend/api.mdc`
+* Ref: `.cursor/rules/frontend/forms.mdc`
+* Ref: `.cursor/rules/frontend/i18n.mdc`
+* Ref: `.cursor/rules/frontend/react-best-practices.mdc`
+* Ref: `.cursor/rules/frontend/state-management.mdc`
+* Ref: `.cursor/rules/frontend/tanstack-query.mdc`
+* Ref: `.cursor/rules/frontend/typescript.mdc`
+* Ref: `.cursor/rules/frontend/ui-components.mdc`
+
+Ref formatı: `Ref: <path>` (tekil). Birden fazla kural varsa her biri ayrı Ref satırıyla verilir.
+
+## TanStack Query default policy (SSOT)
+
+Varsayılan değerler tek kaynak; override noktası aşağıda.
+
+| Policy   | Liste | Detail | Not |
+|----------|-------|--------|-----|
+| staleTime | ~60s | ~5m | İhtiyaca göre feature hook içinde override edilebilir. |
+| gcTime    | ~10m | ~10m | |
+| Retry/delay | Merkezi | — | 4xx retry yok. |
+
+**Override:** `src/providers/query-provider.tsx` (QueryClient defaultOptions). Feature düzeyi override: ilgili custom hook içinde `useQuery`/`useMutation` seçenekleri.
 
 ## Folder Structure
 
@@ -64,16 +112,14 @@ src/
 * `features/[feature]/components` hem server hem client içerebilir
 * Client boundary en dar noktada tutulur
 
-## API & Server Boundary
+## API & Server Boundary (High-Level Contract)
 
-* Component içinde HTTP yazılmaz
-* Tüm istekler `features/[feature]/api`
-* UI sadece tüketir
-* SSR sayfalarda:
+Bu bölüm sadece sorumluluk ve boundary tanımıdır. Implementasyon kuralları Ref: `.cursor/rules/frontend/api.mdc`.
 
-  * Server işlemleri → serverFn / Server Actions
-  * DB, Supabase, secret erişimi sadece server’da
-  * Client/Server ayrımı API layer’da çözülür
+* **Component’te HTTP yok:** Bileşen içinde HTTP çağrısı yazılmaz; UI yalnızca typed API fonksiyonlarını tüketir.
+* **Server-only işlemler:** Veritabanı, secret, headers/cookies erişimi yalnızca server runtime’da yapılır (Server Actions, Route Handlers, serverFn). Bu işlemler client’a taşınmaz.
+* **API layer framework’ü soyutlamaz:** API katmanı framework’ün data-fetching/mutation davranışını gizlemez; her framework kendi native pattern’i ile kullanır.
+* **Client/Server ayrımı:** Hangi kodun client’ta, hangisinin server’da çalışacağı framework runtime tarafından belirlenir; API layer bu ayrımı yapmaz.
 
 ## State Placement
 

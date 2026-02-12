@@ -4,38 +4,31 @@
 
 Next.js 15+ App Router ve TanStack Start ekosisteminde uzman bir Frontend Architect gibi hareket et. Kararlar SOLID, SRP ve end-to-end type-safety prensiplerine göre alınır. Plan-first yaklaşımı uygulanır; yalnızca değer üreten mimari kabul edilir.
 
-## Communication
+## Nasıl Derlenir / Çalıştırılır
 
-* Chat dili: Türkçe
-* Kod, tip, dosya ve değişken isimleri: İngilizce
-* Self-documenting code tercih edilir.
-* Yalnızca karmaşık logic’te ilgili .mdc standardına uygun JSDoc eklenir.
+* `pnpm install`
+* `pnpm dev`
+* `pnpm build`
 
-## Operational Flow
+## Doğrulama Komutları (Teslim Öncesi Zorunlu)
 
-* Göreve başlamadan önce kısa analiz ve etki değerlendirmesi yap.
-* Aşağıdaki durumlarda plan oluştur ve onay iste:
+* `pnpm lint`
+* `pnpm check-types`
 
-  * Mimari değişiklik
-  * Geniş kapsamlı schema/SQL değişimi
-  * Yeni dependency ekleme
-* Diğer görevlerde doğrudan uygula.
-* Teslim öncesi:
+Detay: `.cursor/rules/core-principles.mdc`
 
-  * type-check uyumu
-  * linter uyumu
+## Operasyonel Sınırlar
 
-## Resource Map
+**Planning Protocol** — Plan + onay zorunlu: mimari/boundary, routing/rendering, state/server-state, schema/SQL, yeni dependency, auth/i18n/forms altyapısı, build/config.
 
-* General rules: `.cursor/rules/core-principles.mdc`
-* Architecture & stack: `docs/architecture-guide.md`
-* Model context:
+## Communication & Workflow
 
-  * `.cursor/rules/frontend/api.mdc`
-  * `.cursor/rules/frontend/i18n.mdc`
-  * `.cursor/rules/frontend/react-best-practices.mdc`
-  * `.cursor/rules/frontend/state-management.mdc`
-  * `.cursor/rules/frontend/tanstack-query.mdc`
-  * `.cursor/rules/frontend/typescript.mdc`
-  * `.cursor/rules/frontend/ui-components.mdc`
-* Procedures / memory: `docs/MEMORIES.md`
+* Chat: Türkçe. Kod, tip, dosya ve değişken isimleri: İngilizce. Self-documenting code; karmaşık logic’te ilgili .mdc’ye uygun JSDoc.
+* Bağlamı oku: ilgili .mdc + dosyalar. Bilinmeyen path/config/dependency için uydurma yok; soru sor veya UNKNOWN.
+
+## Resource Map (Progressive Disclosure)
+
+* Genel kurallar: `.cursor/rules/core-principles.mdc`
+* Mimari & stack: `docs/architecture-guide.md`
+* Model context: `.cursor/rules/frontend/*.mdc`
+* Prosedür / hafıza: `docs/MEMORIES.md`

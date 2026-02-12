@@ -1,27 +1,30 @@
 ---
-description: "Zustand: store yerleşimi, atomic selector, SSR-safe hydration."
+description: "USE WHEN: Zustand store, selector veya client state (SSR-safe hydration) yazıyorsan."
 globs: "src/stores/**/*.ts,src/features/**/stores/**/*.ts"
 alwaysApply: false
 ---
 
 # State Management (Zustand)
 
-**Boundary:** Global → `src/stores/[name].store.ts`. Feature → `src/features/[feature]/stores/[name].store.ts`. Feature store sadece kendi klasörü veya `index.ts` ile dışa açılır. Ref: `tanstack-query.mdc` (server state); `api.mdc` (HTTP yasağı).
+**Boundary:** Global → `src/stores/[name].store.ts`. Feature → `src/features/[feature]/stores/[name].store.ts`.
+Feature store sadece kendi klasörü veya `index.ts` ile dışa açılır.
 
----
+Ref: .cursor/rules/frontend/tanstack-query.mdc, .cursor/rules/frontend/api.mdc
 
 ## Kısıtlamalar (Constraints)
 
 - **Library:** Zustand zorunlu (client state tek stack).
 - **Server State:** API verisi → TanStack Query; store’da cache yok.
+  Ref: .cursor/rules/frontend/tanstack-query.mdc
 - **Client State:** UI durumu, form aşamaları, modal/sidebar.
 - **Naming:** Hook → `use[Name]Store`. Dosya → `kebab-case.store.ts`.
 - **Atomic Selector (Zorunlu):** State selector ile tüketilir. `useUserStore(s => s.user)`.
 - **Async:** Store içinde HTTP yok; async Hook veya API katmanında.
-- **SSR-Safe:** Init’te window, document, localStorage, Date() yok. Client-specific state → `useHydrated()` guard; `src/hooks/use-hydrated.ts` tek kaynak. Persist için onRehydrateStorage. Layout shift önle: sabit boyut/skeleton. Manuel hydrate() yok; UI’da useHydrated ile karar.
+  Ref: .cursor/rules/frontend/api.mdc
+- **SSR-Safe:** Init’te window, document, localStorage, Date() yok. Client-specific state → `useHydrated()` guard;
+  `src/hooks/use-hydrated.ts` tek kaynak. Persist: onRehydrateStorage. Layout shift önle: sabit boyut/skeleton.
+  Manuel hydrate() yok; UI’da useHydrated ile karar.
 - **Export:** Feature store → `src/features/[feature]/index.ts`.
-
----
 
 ## Yasaklar (Bans)
 
@@ -31,9 +34,8 @@ alwaysApply: false
 - Ağır hesaplama selector’da; useMemo kullan.
 - Init’te window, Date(), Math.random().
 - Store içinde HTTP.
+  Ref: .cursor/rules/frontend/api.mdc
 - `const { user } = useUserStore();` (selector kullan).
-
----
 
 ## Always Do
 
@@ -46,8 +48,6 @@ const isHydrated = useHydrated();
 const sidebarOpen = useUIStore((s) => s.sidebarOpen);
 const isOpen = isHydrated ? sidebarOpen : false;
 ```
-
----
 
 ## Never Do
 

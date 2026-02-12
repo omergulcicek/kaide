@@ -1,41 +1,43 @@
 ---
-description: "TanStack Query: key factory, custom hook, invalidation, Zod parse."
+description: "USE WHEN: Server state, query/mutation hook veya query key factory yazıyorsan."
 globs: "src/features/**/api/*.{ts,tsx},src/features/**/hooks/*.{ts,tsx},src/providers/query-provider.tsx"
 alwaysApply: false
 ---
 
 # TanStack Query
 
-**Boundary:** Bileşen içinde HTTP/data fetching yasak → Ref: `api.mdc`. Veri sadece `hooks/` custom query hook’ları ile. Ref: `typescript.mdc` (Zod, tip politikası).
+**Boundary:** Bileşen içinde HTTP/data fetching yasak. Veri sadece `hooks/` custom query hook’ları ile.
 
----
+Ref: .cursor/rules/frontend/api.mdc (HTTP/data fetching yasağı SSOT), docs/architecture-guide.md (policy SSOT)
 
 ## Kısıtlamalar (Constraints)
 
 - **API layer:** Bileşenler sadece hook ile veri; API giriş/çıkış Zod doğrulanır; yanıt Zod parse + z.infer ile dönülür.
-- **Query Key Factory:** Sihirli string yasak. `src/features/[feature]/api/query-keys.ts`; hiyerarşik (all → lists/list, details/detail), `as const`; key elle yazılmaz.
-- **Custom Hook (Zorunlu):** `useQuery`/`useMutation` doğrudan bileşende yok; daima custom hook. Hook data, isLoading, error expose eder.
+  Ref: .cursor/rules/frontend/api.mdc, .cursor/rules/frontend/typescript.mdc
+- **Query Key Factory:** Sihirli string yasak. Dosya: `src/features/[feature]/api/query-keys.ts`.
+  Hiyerarşik: all → lists/list, details/detail; `as const`; key elle yazılmaz.
+- **Custom Hook (Zorunlu):** `useQuery`/`useMutation` doğrudan bileşende yok; daima custom hook.
+  Hook data, isLoading, error expose eder.
 - **Abort:** queryFn `signal` API’ye aktarılır; API `params?: { signal?: AbortSignal }` kabul eder.
 - **Pagination:** page (+ filtreler) query key’de; queryFn aynı parametreleri API’ye iletir.
 - **Infinite:** `useInfiniteQuery`; response’ta nextPage; `getNextPageParam`, `initialPageParam: 1` zorunlu.
-- **Mutation:** onSuccess’te ilgili query key invalidate; `queryClient.invalidateQueries({ queryKey: postKeys.lists() })`. Optimistic update kritik UX’te tercih.
-- **Global:** staleTime liste ~60s, detail ~5m; gcTime ~10m. Retry/delay `query-provider.tsx` merkezi; 4xx retry yok. Hata: QueryCache/MutationCache toast.
+- **Mutation:** onSuccess’te ilgili query key invalidate; optimistik update kritik UX’te tercih.
+- **Policy (SSOT):** staleTime/gcTime/retry varsayılanları docs/architecture-guide.md § TanStack Query default policy.
+  Override: `src/providers/query-provider.tsx` veya feature hook içinde.
+- **Hata:** QueryCache/MutationCache toast.
 - **UI:** Bileşen sadece custom hook; loading’de skeleton.
-
----
 
 ## Yasaklar (Bans)
 
-- Bileşen içinde HTTP / data fetching veya doğrudan useQuery/useMutation (Ref: api.mdc).
+- Bileşen içinde HTTP / data fetching veya doğrudan useQuery/useMutation.
+  Ref: .cursor/rules/frontend/api.mdc
 - Query key’i manuel string yazmak.
-- API yanıtını Zod/tip kontrolü olmadan kullanmak (Ref: typescript.mdc).
-
----
+- API yanıtını Zod/tip kontrolü olmadan kullanmak.
+  Ref: .cursor/rules/frontend/typescript.mdc
 
 ## Always Do
 
 ```ts
-// query-keys.ts
 export const postKeys = {
   all: ["posts"] as const,
   lists: () => [...postKeys.all, "list"] as const,
@@ -65,8 +67,6 @@ const { data: posts, isLoading } = useGetPosts();
 if (isLoading) return <PostListSkeleton />;
 return <div>{posts?.map((p) => <PostCard key={p.id} post={p} />)}</div>;
 ```
-
----
 
 ## Never Do
 

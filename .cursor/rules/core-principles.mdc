@@ -1,38 +1,43 @@
 ---
-description: "Global guardrails. Çelişkide bu dosya öncelikli."
+description: "USE WHEN: Tüm proje. Global guardrails; çelişkide bu dosya öncelikli."
 alwaysApply: true
 ---
 
 # Core Constitution
 
-**Scope:** Tüm proje. Ref: `docs/architecture-guide.md` (klasör/dizin öncesi).
+**Scope:** Tüm proje. Kapsam dışı: domain/framework kuralları → Ref listesi aşağıda.
 
----
+**Ref:** docs/architecture-guide.md, .cursor/rules/frontend/*.mdc
+
+## Code Quality Guardrails
+
+- **Placeholder:** "TODO", "stub", "..." bırakma.
+  - **Tek istisna:** Kasıtlı ise açıkça `INTENTIONAL_TODO` veya `INTENTIONAL_ELLIPSIS` etiketle.
+- **Pseudo-code yok:** Her zaman çalışır TypeScript/React kodu ver.
+- **Belirsiz referans yok:** "Genelde böyle yapılır" kullanma; repo kuralına (Ref: …) bağla.
+- **Teslim öncesi doğrulama:** `pnpm check-types` ve `pnpm lint` geçmeden teslim etme.
 
 ## Kısıtlamalar (Constraints)
 
 - **Search First:** Yeni kod öncesi mevcut pattern + benzer implementasyon incele.
 - **Minimal Intervention:** Sadece gerekli alan; kapsam dışı refactor yok.
-- **No Placeholders:** `// ...existing code`, `// TODO: implement later`, eksik snippet yasak. Her zaman çalışır + tam kod.
-- **Source of Truth:** Kod tabanı birincil referans. Standart dışı/hatalı yapı → best-practice uygula + kısa teknik uyarı.
+- **Source of Truth:** Kod tabanı birincil referans.
+  - Standart dışı/hatalı yapı → best-practice uygula + kısa teknik uyarı.
 - **Boy Scout:** Dokunulan dosyada unused import sil, `console.log` kaldır, ölü kod temizle.
 - **Naming:** Dosya/klasör → `kebab-case`.
 - **No Silent Failures:** Hata yutmak yasak. İzlenebilir error handling zorunlu.
 - **Secret Protection:** `.env`, token, key, credential içeriği gösterme/loglama/üretme.
 - **Dependency:** Yeni paket öncesi mevcut çözüm kontrol; gerekiyorsa onay.
 - **Validation:** Değişiklik sonrası type-check + linter uyumu. Commit → Conventional Commits.
+  - Ref: docs/architecture-guide.md
 
----
+## Yasaklar (Bans) — SSOT bu dosya
 
-## Yasaklar (Bans)
-
-- Placeholder snippet, eksik kod.
-- Silent catch; `catch (e) {}`.
+- Placeholder snippet veya eksik kod (istisna: `INTENTIONAL_TODO` / `INTENTIONAL_ELLIPSIS`).
+- Silent catch: `catch (e) {}` veya boş catch.
 - Secret içeriği loglama/üretme.
 - Kapsam dışı refactor.
-- `// ...existing code` ile partial diff.
-
----
+- `// ...existing code` ile partial diff; tam blok ver.
 
 ## Always Do
 
@@ -54,8 +59,6 @@ export const Header = () => {
   );
 };
 ```
-
----
 
 ## Never Do
 

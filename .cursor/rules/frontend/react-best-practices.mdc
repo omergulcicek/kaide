@@ -1,30 +1,33 @@
 ---
-description: "React: lifecycle, hooks, data flow. Stil/component → ui-components.mdc."
+description: "USE WHEN: React bileşeni, hook veya lifecycle/data flow tasarlıyorsan. Stil → ui-components.mdc."
 globs: "src/components/**/*.{ts,tsx},src/hooks/**/*.{ts,tsx}"
 alwaysApply: false
 ---
 
 # React (Lifecycle · Hooks · Data Flow)
 
-**Ref:** Stil, atomik hiyerarşi, semantic HTML → `ui-components.mdc`. HTTP/data fetching yasağı → `api.mdc`. Hook ile veri → `tanstack-query.mdc`. Mimari → `docs/architecture-guide.md`, karar geçmişi → `docs/MEMORIES.md`.
+**Boundary:** Tek sorumluluk; veri bileşen içinde fetch/HTTP yok (API layer SSOT).
 
----
+Ref: .cursor/rules/frontend/api.mdc, .cursor/rules/frontend/ui-components.mdc,
+.cursor/rules/frontend/tanstack-query.mdc, docs/architecture-guide.md, docs/MEMORIES.md
 
 ## Kısıtlamalar (Constraints)
 
 - **SRP:** Tek sorumluluk; 150+ satır → parçala.
-- **Prop drilling (2+ seviye) yok:** children / slot / context.
+- **Prop drilling (2+ seviye) yok:** children / slot / context kullan.
 - **Naming:** Component/file PascalCase; hook camelCase + `use`; index.tsx yerine explicit entry.
-- **Memoization:** React 19+ / Compiler; manuel useMemo/useCallback azalt. Context Provider value + custom hook dönüş değeri referans kritikse manuel useMemo.
+- **Memoization:** React 19+ / Compiler; manuel useMemo/useCallback azalt.
+  Context Provider value + custom hook dönüş değeri referans kritikse manuel useMemo.
 - **Custom hook:** Sadece business logic veya complex state; basit state component’te.
 - **exhaustive-deps:** Açık; dependency array bilinçli.
 - **setState:** Önceki state’e bağlı güncelleme → `setState(prev => ...)`.
 - **useEffect + harici fn:** useEvent veya useCallback ile sarmala (stale closure önleme).
 - **useEffect:** Last resort. Sync türev → useMemo. Kullanıcı/event → handler (onClick, onChange).
-- **State:** Sadece en yakın ortak ataya kaldır. Karmaşık güncelleme → immer. Aynı veri birden fazla state’te yok. Global (theme, auth) → context/provider.
+- **State:** Sadece en yakın ortak ataya kaldır. Karmaşık güncelleme → immer.
+  Aynı veri birden fazla state’te yok. Global (theme, auth) → context/provider.
 - **Derived:** Props → state eşitleme yok; derived value kullan.
-
----
+- **Data fetching/HTTP:** Bileşen içinde yasak.
+  Ref: .cursor/rules/frontend/api.mdc
 
 ## Yasaklar (Bans)
 
@@ -36,10 +39,9 @@ alwaysApply: false
 - Doğrudan mutate.
 - Aynı veriyi birden fazla state’te tutmak.
 - Global concern’i prop ile taşımak.
-- Bileşen içinde data fetching/HTTP (Ref: api.mdc).
+- Bileşen içinde data fetching/HTTP.
+  Ref: .cursor/rules/frontend/api.mdc
 - Büyük hesaplamayı render sırasında çalıştırmak.
-
----
 
 ## Always Do
 
@@ -51,8 +53,6 @@ useEffect(() => { stableOnSave(data); }, [data]);
 ```tsx
 setCount((prev) => prev + 1);
 ```
-
----
 
 ## Never Do
 

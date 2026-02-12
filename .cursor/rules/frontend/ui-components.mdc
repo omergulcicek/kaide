@@ -1,18 +1,20 @@
 ---
-description: "UI: Shadcn, Tailwind, atomik hiyerarşi, loading/a11y."
+description: "USE WHEN: UI bileşeni (Shadcn/Tailwind), layout, loading veya a11y tasarlıyorsan."
 globs: "src/components/**/*.{ts,tsx},src/features/**/components/**/*.{ts,tsx}"
 alwaysApply: false
 ---
 
 # UI Components
 
-**Boundary:** Atomic `src/components/ui/` (API, TanStack Query, global store yasak). Shared `src/components/shared/`. Feature `src/features/[name]/components/` (domain, hook, query, store burada). Ref: `api.mdc` (HTTP yasağı), `tanstack-query.mdc` (hook), `typescript.mdc` (Zod form şemaları).
+**Boundary:** Atomic `src/components/ui/` API/query/store kullanmaz. Shared: `src/components/shared/`.
+Feature: `src/features/[name]/components/` (domain/hook/query/store burada).
 
----
+Ref: .cursor/rules/frontend/api.mdc (HTTP/data fetching yasağı SSOT), .cursor/rules/frontend/tanstack-query.mdc
 
 ## Kısıtlamalar (Constraints)
 
 - **Atomic:** Saf, stateless, shadcn primitive; API/query/store bağımlılığı yok.
+  Ref: .cursor/rules/frontend/api.mdc, .cursor/rules/frontend/tanstack-query.mdc
 - **Shared:** Birden fazla feature; domain bağımlılığı minimal.
 - **Feature:** Domain logic; hook/query/store burada.
 - **Tailwind only:** CSS module, styled-components, inline style yasak.
@@ -26,21 +28,23 @@ alwaysApply: false
 - **Toasts:** shadcn Sonner.
 - **Default:** Bileşenler Server Component. "use client" sadece state/effect/handlers gerektiğinde; en küçük leaf’e.
 - **Data:** Initial load → Server Component; user interaction → Client + TanStack Query.
-- **Form:** @/components/ui; validation Zod (Ref: typescript.mdc); şema feature schemas/. Shadcn FormField, FormItem, FormLabel, FormMessage. Input ↔ label ↔ error bağı programatik.
-- **Loading:** Async veri tüketen bileşen → [ComponentName]Skeleton zorunlu. Base: @/components/ui/skeleton. Skeleton boyut/spacing/yapı gerçek bileşenle eşleşir.
-- **A11y:** Semantic layout (main, nav, aside, section, article). Interactive → görünür focus. Icon-only button → aria-label. Dekoratif → aria-hidden="true". Radix/Base UI mirası korunur.
-
----
+- **Form:** @/components/ui; validation Zod; şema feature schemas/. Shadcn FormField, FormItem, FormLabel, FormMessage.
+  Input ↔ label ↔ error bağı programatik.
+  Ref: .cursor/rules/frontend/typescript.mdc
+- **Loading:** Async veri tüketen bileşen → [ComponentName]Skeleton zorunlu. Base: @/components/ui/skeleton.
+  Skeleton boyut/spacing/yapı gerçek bileşenle eşleşir.
+- **A11y:** Semantic layout (main, nav, aside, section, article). Interactive → görünür focus.
+  Icon-only button → aria-label. Dekoratif → aria-hidden="true".
 
 ## Yasaklar (Bans)
 
 - Atomic layer’da API, TanStack Query, global store.
+  Ref: .cursor/rules/frontend/api.mdc
 - Inline style.
 - Hex/rgb renk.
 - default export.
-- Bileşen içinde data fetching/HTTP (Ref: api.mdc, tanstack-query.mdc).
-
----
+- Bileşen içinde data fetching/HTTP.
+  Ref: .cursor/rules/frontend/api.mdc
 
 ## Always Do
 
@@ -63,8 +67,6 @@ export const ProfileCard = ({ name, children }: ProfileCardProps) => (
 ```tsx
 <div className={cn("p-4", active ? "bg-primary" : "bg-muted")} />
 ```
-
----
 
 ## Never Do
 

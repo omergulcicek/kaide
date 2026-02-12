@@ -19,7 +19,3 @@ Her kayıt aşağıdaki yapıda tutulur. Tarih `YYYY-MM-DD`, başlık kısa ve k
 - **Karar:** Ne yapıldığı / ne tercih edildiği.
 - **Gerekçe:** Neden bu yol seçildi (tek satır yeterli).
 ```
-
----
-
-<!-- Aşağıya kayıtlar eklenir -->
