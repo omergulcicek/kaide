@@ -1,73 +1,42 @@
 ---
-description: "Proje genelindeki mutlak davranış, değişiklik ve kalite prensipleri. Tüm kuralların üstündedir."
+description: "Global guardrails. Çelişkide bu dosya öncelikli."
 alwaysApply: true
 ---
 
-# Core Constitution (Global Guardrails)
+# Core Constitution
 
-Bu dosya tüm kuralların temelidir. Çelişki durumunda bu dosya önceliklidir.
+**Scope:** Tüm proje. Ref: `docs/architecture-guide.md` (klasör/dizin öncesi).
 
-## 1) Modification Principles (Strict)
+---
 
-* **Search First:** Yeni kod yazmadan önce mevcut pattern’leri ve benzer implementasyonları incele.
-* **Follow Architecture:** Yeni klasör/dizin oluşturmadan önce `docs/architecture-guide.md` referans alınır.
-* **Minimal Intervention:** Sadece gerekli alan değiştirilir. Kapsam dışı refactor yapılmaz.
-* **No Placeholders:**
+## Kısıtlamalar (Constraints)
 
-  * `// ...existing code`
-  * `// TODO: implement later`
-  * Eksik snippet yasak.
-    Her zaman çalışır ve tam kod üret.
-* **Source of Truth:** Mevcut kod tabanı birincil referanstır.
-  Standart dışı veya hatalı yapı görülürse:
+- **Search First:** Yeni kod öncesi mevcut pattern + benzer implementasyon incele.
+- **Minimal Intervention:** Sadece gerekli alan; kapsam dışı refactor yok.
+- **No Placeholders:** `// ...existing code`, `// TODO: implement later`, eksik snippet yasak. Her zaman çalışır + tam kod.
+- **Source of Truth:** Kod tabanı birincil referans. Standart dışı/hatalı yapı → best-practice uygula + kısa teknik uyarı.
+- **Boy Scout:** Dokunulan dosyada unused import sil, `console.log` kaldır, ölü kod temizle.
+- **Naming:** Dosya/klasör → `kebab-case`.
+- **No Silent Failures:** Hata yutmak yasak. İzlenebilir error handling zorunlu.
+- **Secret Protection:** `.env`, token, key, credential içeriği gösterme/loglama/üretme.
+- **Dependency:** Yeni paket öncesi mevcut çözüm kontrol; gerekiyorsa onay.
+- **Validation:** Değişiklik sonrası type-check + linter uyumu. Commit → Conventional Commits.
 
-  * best-practice uygulanır
-  * kısa teknik uyarı yapılır
+---
 
-## 2) Code Hygiene
+## Yasaklar (Bans)
 
-* **Boy Scout Rule:** Dokunulan dosya daha temiz bırakılır:
+- Placeholder snippet, eksik kod.
+- Silent catch; `catch (e) {}`.
+- Secret içeriği loglama/üretme.
+- Kapsam dışı refactor.
+- `// ...existing code` ile partial diff.
 
-  * unused import sil
-  * `console.log` kaldır
-  * ölü kod temizle
-* **Naming:** Tüm dosya/klasör isimleri `kebab-case`.
+---
 
-## 3) Error & Security Boundaries (Strict)
-
-* **No Silent Failures:** Hata yutmak yasak. İzlenebilir error handling zorunlu.
-* **Secret Protection:**
-
-  * `.env`
-  * token
-  * key
-  * credential
-    İçerikleri asla gösterme, loglama, üretme.
-* **Dependency Awareness:**
-  Yeni paket eklemeden önce:
-
-  * mevcut çözüm var mı kontrol et
-  * gerekiyorsa onay iste
-
-## 4) Validation Discipline
-
-* **Deterministic Validation:**
-  Değişiklik sonrası varsa:
-
-  * type-check
-  * linter
-    standartlara uyum gözetilir.
-* **Commit Standard:** Use Conventional Commits.
-
-## 5) Architectural Enforcement Examples
-
-### Error Handling
+## Always Do
 
 ```js
-// ❌ DONT / BAN:
-try { process(data); } catch (e) {}
-
-// ✅ DO / MUST:
 try {
   process(data);
 } catch (error) {
@@ -75,16 +44,7 @@ try {
 }
 ```
 
-### Modification Style
-
 ```js
-// ❌ DONT / BAN:
-export const Header = () => {
-  // ...existing code
-  return <nav>New Link</nav>;
-};
-
-// ✅ DO / MUST:
 export const Header = () => {
   return (
     <header>
@@ -92,5 +52,20 @@ export const Header = () => {
       <nav>New Link</nav>
     </header>
   );
+};
+```
+
+---
+
+## Never Do
+
+```js
+try { process(data); } catch (e) {}
+```
+
+```js
+export const Header = () => {
+  // ...existing code
+  return <nav>New Link</nav>;
 };
 ```

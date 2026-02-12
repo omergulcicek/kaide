@@ -1,97 +1,50 @@
 ---
-description: "UI bileşen üretim standartları. Shadcn, Tailwind ve atomik mimari kuralları."
-globs: "src/components/**/*.{ts,tsx}, src/features/**/components/**/*.{ts,tsx}"
+description: "UI: Shadcn, Tailwind, atomik hiyerarşi, loading/a11y."
+globs: "src/components/**/*.{ts,tsx},src/features/**/components/**/*.{ts,tsx}"
 alwaysApply: false
 ---
 
-# UI Component Standards (LLM Guardrails)
-AI, UI bileşeni üretirken bu hiyerarşi ve teknik bariyerlere uyar.
+# UI Components
 
-## 1) Component Placement (Strict Hierarchy)
-* **Atomic — `src/components/ui/`**
-  * Saf, stateless, shadcn tabanlı primitive’ler.
-  * API, TanStack Query, global store bağımlılığı yasak.
+**Boundary:** Atomic `src/components/ui/` (API, TanStack Query, global store yasak). Shared `src/components/shared/`. Feature `src/features/[name]/components/` (domain, hook, query, store burada). Ref: `api.mdc` (HTTP yasağı), `tanstack-query.mdc` (hook), `typescript.mdc` (Zod form şemaları).
 
-* **Shared — `src/components/shared/`**
-  * Birden fazla feature tarafından kullanılan fonksiyonel bileşenler.
-  * Domain bağımlılığı minimal olmalı.
+---
 
-* **Feature — `src/features/[name]/components/`**
-  * Domain logic içeren bileşenler.
-  * Hook, query ve store bağımlılığı burada olabilir.
+## Kısıtlamalar (Constraints)
 
-## 2) Styling Protocol (Strict)
-* **Tailwind Only:** CSS module, styled-components, inline style yasak.
-* **Class Merge:** Koşullu class için yalnızca `cn()` → `@/lib/utils`.
-* **Mobile First:** Responsive sıralama mobile-first olmalı.
-  * `p-4 md:p-8`
-* **Design Tokens:** Hex/rgb yasak.
-  * `text-primary`, `bg-background`, `border-muted`
-* **Shadcn Integrity:** Açıkça istenmediği sürece default shadcn stilleri override edilmez.
+- **Atomic:** Saf, stateless, shadcn primitive; API/query/store bağımlılığı yok.
+- **Shared:** Birden fazla feature; domain bağımlılığı minimal.
+- **Feature:** Domain logic; hook/query/store burada.
+- **Tailwind only:** CSS module, styled-components, inline style yasak.
+- **Class merge:** Koşullu class → sadece `cn()` (`@/lib/utils`).
+- **Mobile first:** Responsive sıra `p-4 md:p-8`.
+- **Design tokens:** Hex/rgb yasak; `text-primary`, `bg-background`, `border-muted`.
+- **Shadcn:** Default stiller override edilmez (açık istek hariç).
+- **Export:** Sadece named; default export yasak.
+- **Props:** Her zaman `type` ile.
+- **Icons:** Sadece lucide-react; default size 16; dekoratif → aria-hidden="true".
+- **Toasts:** shadcn Sonner.
+- **Default:** Bileşenler Server Component. "use client" sadece state/effect/handlers gerektiğinde; en küçük leaf’e.
+- **Data:** Initial load → Server Component; user interaction → Client + TanStack Query.
+- **Form:** @/components/ui; validation Zod (Ref: typescript.mdc); şema feature schemas/. Shadcn FormField, FormItem, FormLabel, FormMessage. Input ↔ label ↔ error bağı programatik.
+- **Loading:** Async veri tüketen bileşen → [ComponentName]Skeleton zorunlu. Base: @/components/ui/skeleton. Skeleton boyut/spacing/yapı gerçek bileşenle eşleşir.
+- **A11y:** Semantic layout (main, nav, aside, section, article). Interactive → görünür focus. Icon-only button → aria-label. Dekoratif → aria-hidden="true". Radix/Base UI mirası korunur.
 
-## 3) Implementation Rules
-* **Exports:** Sadece named export. `default export` yasak.
-* **Props Typing:** Props her zaman `type` ile tanımlanır.
-* **Icons:**
-  * Sadece `lucide-react`
-  * Default: `size={16}`
-  * Dekoratif ikon: `aria-hidden="true"`
-* **Toasts:** Tüm bildirimler → shadcn Sonner.
+---
 
-## 4) Next.js Component Boundaries
-* **Default:** Tüm bileşenler Server Component kabul edilir.
-* **"use client" Rule:**
-  * Sadece gerektiğinde eklenir:
-    * state
-    * effect
-    * event handlers
-  * Mümkün olan en küçük leaf component’e yerleştirilir.
-* **Data Fetching Split:**
-  * Initial load → Server Component
-  * User interaction → Client Component + TanStack Query
+## Yasaklar (Bans)
 
-## 5) Form Architecture
-* **Base Components:** `@/components/ui` atomik bileşenleri kullan.
-* **Validation:** Form şemaları için mutlaka `typescript.mdc` içindeki **Zod-First** kuralı uygulanır. Şema, feature klasöründeki `schemas/` dizininde tanımlanır.
-* **Shadcn Pattern:**
-  * `FormField`
-  * `FormItem`
-  * `FormLabel`
-  * `FormMessage`
-* **A11y:** Input ↔ label ↔ error bağı programatik olarak kurulmalı.
+- Atomic layer’da API, TanStack Query, global store.
+- Inline style.
+- Hex/rgb renk.
+- default export.
+- Bileşen içinde data fetching/HTTP (Ref: api.mdc, tanstack-query.mdc).
 
-## 6) Loading States (Strict)
-* Async veri tüketen her bileşen için:
-  * `[ComponentName]Skeleton` zorunlu.
-* Base: `@/components/ui/skeleton`
-* Layout parity:
-  * Skeleton boyut, spacing ve yapı olarak gerçek bileşenle eşleşir.
+---
 
-## 7) Accessibility (A11y Guardrails)
-* **Semantic Layout:**
-  * `<main>`, `<nav>`, `<aside>`, `<section>`, `<article>`
-* **Focus States:**
-  * Tüm interactive öğeler görünür focus state taşır.
-* **Icon-only Buttons:**
-  * Zorunlu: `aria-label`
-* **Decorative Icons:**
-  * `aria-hidden="true"`
-* **Base Primitives:**
-  * Radix/Base UI erişilebilirlik mirası korunur.
+## Always Do
 
-## 8) Hard Bans
-* ❌ DONT / BAN: Atomic layer içinde:
-  * API çağrısı
-  * TanStack Query
-  * Global store erişimi
-* ❌ DONT / BAN: Inline style
-* ❌ DONT / BAN: Hex / rgb renk kullanımı
-* ❌ DONT / BAN: default export
-* ❌ DONT / BAN: Bileşen içinde data fetching / HTTP (tek kaynak → **api.mdc**; hook kullanımı → **tanstack-query.mdc**)
-
-## 9) Composition Example
 ```tsx
-// ✅ DO / MUST: UI + composition
 import { Card } from "@/components/ui/card";
 
 type ProfileCardProps = {
@@ -99,18 +52,31 @@ type ProfileCardProps = {
   children?: React.ReactNode;
 };
 
-export const ProfileCard = ({ name, children }: ProfileCardProps) => {
-  return (
-    <Card className="p-4">
-      <h3>{name}</h3>
-      {children}
-    </Card>
-  );
-};
+export const ProfileCard = ({ name, children }: ProfileCardProps) => (
+  <Card className="p-4">
+    <h3>{name}</h3>
+    {children}
+  </Card>
+);
 ```
 
-## 10) Class Merging
 ```tsx
-// ✅ DO / MUST
 <div className={cn("p-4", active ? "bg-primary" : "bg-muted")} />
+```
+
+---
+
+## Never Do
+
+```tsx
+export default function Button() {}
+```
+
+```tsx
+<div style={{ padding: 16 }} />
+```
+
+```tsx
+// ui/ içinde
+const { data } = useQuery(...);
 ```

@@ -1,83 +1,54 @@
 ---
-description: "TanStack Query kullanım standartları. API istekleri, caching, invalidation ve tip güvenliği kurallarını belirler."
-globs: "src/features/**/api/*.{ts,tsx}, src/features/**/hooks/*.{ts,tsx}, src/providers/query-provider.tsx"
+description: "TanStack Query: key factory, custom hook, invalidation, Zod parse."
+globs: "src/features/**/api/*.{ts,tsx},src/features/**/hooks/*.{ts,tsx},src/providers/query-provider.tsx"
 alwaysApply: false
 ---
 
-# TanStack Query Standartları
+# TanStack Query
 
-Server-state yönetimi için zorunlu uygulama standartları.
+**Boundary:** Bileşen içinde HTTP/data fetching yasak → Ref: `api.mdc`. Veri sadece `hooks/` custom query hook’ları ile. Ref: `typescript.mdc` (Zod, tip politikası).
 
-## 1) Veri Erişim Katmanı (API Layer)
+---
 
-* **Bileşen içinde HTTP/data fetching yasağı (tek kaynak):** → `.cursor/rules/frontend/api.mdc`. Bu dosya yalnızca hook kullanımı ve query/mutation kurallarını tanımlar.
-* **Bileşenler:** Veriye sadece `hooks/` klasöründeki custom query hook'ları üzerinden erişir.
-* **Tip:** API giriş/çıkış tipleri Zod ile doğrulanmalı; genel tip politikası → `.cursor/rules/frontend/typescript.mdc`. Yanıtlar doğrudan dönülmez; Zod `parse` + `z.infer` ile return edilir.
+## Kısıtlamalar (Constraints)
+
+- **API layer:** Bileşenler sadece hook ile veri; API giriş/çıkış Zod doğrulanır; yanıt Zod parse + z.infer ile dönülür.
+- **Query Key Factory:** Sihirli string yasak. `src/features/[feature]/api/query-keys.ts`; hiyerarşik (all → lists/list, details/detail), `as const`; key elle yazılmaz.
+- **Custom Hook (Zorunlu):** `useQuery`/`useMutation` doğrudan bileşende yok; daima custom hook. Hook data, isLoading, error expose eder.
+- **Abort:** queryFn `signal` API’ye aktarılır; API `params?: { signal?: AbortSignal }` kabul eder.
+- **Pagination:** page (+ filtreler) query key’de; queryFn aynı parametreleri API’ye iletir.
+- **Infinite:** `useInfiniteQuery`; response’ta nextPage; `getNextPageParam`, `initialPageParam: 1` zorunlu.
+- **Mutation:** onSuccess’te ilgili query key invalidate; `queryClient.invalidateQueries({ queryKey: postKeys.lists() })`. Optimistic update kritik UX’te tercih.
+- **Global:** staleTime liste ~60s, detail ~5m; gcTime ~10m. Retry/delay `query-provider.tsx` merkezi; 4xx retry yok. Hata: QueryCache/MutationCache toast.
+- **UI:** Bileşen sadece custom hook; loading’de skeleton.
+
+---
+
+## Yasaklar (Bans)
+
+- Bileşen içinde HTTP / data fetching veya doğrudan useQuery/useMutation (Ref: api.mdc).
+- Query key’i manuel string yazmak.
+- API yanıtını Zod/tip kontrolü olmadan kullanmak (Ref: typescript.mdc).
+
+---
+
+## Always Do
 
 ```ts
-// src/features/posts/api/get-posts.ts
-import { z } from 'zod';
-import { api } from '@/lib/api';
-const PostSchema = z.object({ id: z.string(), title: z.string() });
-export type Post = z.infer<typeof PostSchema>;
-export const getPosts = async (): Promise<Post[]> => {
-  const { data } = await api.get('/api/posts');
-  return z.array(PostSchema).parse(data);
-};
-```
-
-## 2) Query Key Yönetimi (Zorunlu)
-
-* Sihirli string yasak. Her feature için `src/features/[feature]/api/query-keys.ts` içinde **Query Key Factory**; tüm key'ler buradan türetilir.
-* Yapı: Hiyerarşik (all → lists/list, details/detail), `as const`, dinamik parametreler factory fonksiyonuna geçilir; key hiçbir yerde elle yazılmaz.
-
-```ts
-// src/features/posts/api/query-keys.ts
+// query-keys.ts
 export const postKeys = {
-  all: ['posts'] as const,
-  lists: () => [...postKeys.all, 'list'] as const,
+  all: ["posts"] as const,
+  lists: () => [...postKeys.all, "list"] as const,
   list: (filters?: { category?: string }) => [...postKeys.lists(), filters] as const,
-  details: () => [...postKeys.all, 'detail'] as const,
+  details: () => [...postKeys.all, "detail"] as const,
   detail: (id: string) => [...postKeys.details(), id] as const,
 };
-// ✅ Hook'ta: queryKey: postKeys.list() veya postKeys.detail(id)
-// ❌ queryKey: ['posts', userId]
 ```
 
-## 3) Custom Hook Kullanımı (Zorunlu)
-
-* `useQuery` / `useMutation` doğrudan bileşende çağrılmaz; daima custom hook içinde sarmalanır. Hook, `data`, `isLoading`, `error` vb. tüm dönüşü erişilebilir kılar.
-* **Abort:** Filtreleme, hızlı sayfa geçişi veya unmount'ta istek iptali için `queryFn`'e gelen `signal` API katmanına aktarılır. API fonksiyonu `params?: { signal?: AbortSignal }` kabul etmeli.
-
 ```ts
-// Hook
 export const useGetPosts = () =>
   useQuery({ queryKey: postKeys.list(), queryFn: ({ signal }) => getPosts({ signal }) });
-// API
-export const getPosts = async (params?: { signal?: AbortSignal }) => {
-  const { data } = await api.get('/api/posts', { signal: params?.signal });
-  return z.array(PostSchema).parse(data);
-};
 ```
-
-## 4) Pagination & Infinite Query
-
-* **Pagination:** Sayfalı veride `page` (ve filtreler) query key'e dahil edilir; `queryFn` aynı parametreleri API'ye iletir.
-* **Infinite:** Büyüyen listelerde `useInfiniteQuery`. Response'ta `nextPage: number | null` (veya benzeri) olmalı; `getNextPageParam: (lastPage) => lastPage.nextPage ?? undefined`, `initialPageParam: 1` zorunlu.
-
-```ts
-export const useInfinitePosts = (filters?: { category?: string }) =>
-  useInfiniteQuery({
-    queryKey: postKeys.list(filters),
-    queryFn: ({ pageParam }) => getPostsPaginated({ page: pageParam as number }),
-    getNextPageParam: (last) => last.nextPage ?? undefined,
-    initialPageParam: 1,
-  });
-```
-
-## 5) Mutation ve Invalidation
-
-* `useMutation` kullanıldığında `onSuccess` içinde ilgili query key'ler `queryClient.invalidateQueries({ queryKey: postKeys.lists() })` (veya detail/list) ile invalidate edilir. Kritik UX'te optimistic update tercih edilir.
 
 ```ts
 export const useCreatePost = () => {
@@ -89,25 +60,22 @@ export const useCreatePost = () => {
 };
 ```
 
-## 6) Server-Side & Global
-
-* **Next.js:** Kritik veriler prefetch; `dehydrate` + `HydrationBoundary`. Mutation server action ile sarmalanabilir.
-* **Global:** `staleTime` liste ~60s, detail ~5m; `gcTime` ~10m. Retry ve delay `src/providers/query-provider.tsx` içinde merkezi; hook'ta tekrar tanımlanmaz. 4xx (401, 403, 404) retry predicate ile engellenir. Hata: `QueryCache`/`MutationCache` üzerinden merkezi toast.
-
-## 7) UI Kullanımı
-
-Bileşen sadece custom hook kullanır; loading'de skeleton döner.
-
 ```tsx
-export const PostList = () => {
-  const { data: posts, isLoading } = useGetPosts();
-  if (isLoading) return <PostListSkeleton />;
-  return <div>{posts?.map((p) => <PostCard key={p.id} post={p} />)}</div>;
-};
+const { data: posts, isLoading } = useGetPosts();
+if (isLoading) return <PostListSkeleton />;
+return <div>{posts?.map((p) => <PostCard key={p.id} post={p} />)}</div>;
 ```
 
-## 8) Kritik Yasaklar
+---
 
-* ❌ Bileşen içinde HTTP / data fetching veya `useQuery`/`useMutation` doğrudan kullanımı (→ **api.mdc**); daima custom hook.
-* ❌ Query key'i manuel string yazmak.
-* ❌ API yanıtını Zod/tip kontrolü olmadan kullanmak (→ **typescript.mdc**).
+## Never Do
+
+```ts
+useQuery({ queryKey: ["posts", userId], queryFn: getPosts });
+```
+
+```tsx
+function PostList() {
+  const { data } = useQuery({ queryKey: ["posts"], queryFn: () => api.get("/posts") });
+}
+```

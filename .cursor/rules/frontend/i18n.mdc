@@ -1,0 +1,57 @@
+---
+description: "i18n: Çok dillilik mimarisi. Next.js (next-intl) ve TanStack Start (Paraglide-JS) standartları."
+globs: "src/messages/**/*.json,src/i18n/**/*.{ts,tsx},src/features/**/index.ts"
+alwaysApply: false
+---
+
+# Internationalization (i18n)
+
+**Boundary:** Çeviriler merkezi `src/messages/` (Next.js) veya `src/paraglide/` (TanStack) içinde tutulur. UI ham metin içeremez. Ref: `architecture-guide.md` (Framework bazlı kütüphane seçimi).
+
+---
+
+## Kısıtlamalar (Constraints)
+
+- **Framework Agnostic Implementation:** - **Next.js:** `next-intl` kullanarak `useTranslations` (client) veya `getTranslations` (server) tercih et.
+  - **TanStack Start:** `paraglide-js` kullanarak derlenmiş mesaj fonksiyonlarını (`m.key_name()`) doğrudan kullan.
+- **Type-Safe Keys:** Çeviri anahtarları "magic string" olamaz. Build-time tip kontrolü zorunludur.
+- **Parametric Values:** Dinamik metinlerde Paraglide fonksiyonları veya next-intl nesneleri kullanılmalı; manuel string template/concatenation yasaktır.
+- **Feature-Based Scoping:** Büyük feature'larda anahtarlar feature ismiyle namespace edilmelidir (`{ "profile": { "settings": "..." } }`).
+- **Zero-Hardcoded Policy:** Alt bileşenlere (button, label vb.) geçilen metinler mutlaka i18n katmanından gelmelidir.
+- **Pluralization:** Çoğul ifadeler (1 item / 2 items) framework’ün plural API’si ile yönetilir:
+  - **Next.js** → mesajda ICU `{count, plural, =0 {...} =1 {...} other {# ...}}` + `t('key', { count })`
+  - **TanStack (Paraglide)** → mesajda variant `count: plural` + derlenmiş fonksiyona `count` argümanı. Sayıya göre manuel branch veya string birleştirme yasak.
+
+---
+
+## Yasaklar (Bans)
+
+- UI bileşenleri içinde ham string (Inline text).
+- `t("auth." + key)` gibi dinamik/hesaplanmış anahtar üretimi (Type-safety'yi kırar).
+- Locale bilgisini `window.location` veya manuel URL parse ile çekmek.
+- JSON dosyalarında derin iç içe yapı (Max 3 seviye hiyerarşi).
+- Layout shift'e sebep olacak asenkron çeviri yüklemeleri (Proper pre-fetching zorunlu).
+
+---
+
+## Always Do
+
+```tsx
+// ✅ Next.js (next-intl)
+import { useTranslations } from "next-intl";
+const t = useTranslations("auth");
+return <button>{t("login")}</button>;
+
+// ✅ TanStack Start (Paraglide)
+import * as m from "@/paraglide/messages";
+return <button>{m.auth_login()}</button>;
+```
+
+## Never Do
+```tsx
+// ❌ BAN: String concatenation
+const label = t("welcome") + " " + user.name; 
+
+// ❌ BAN: Missing type safety
+const text = messages[key]; // No type checking
+```

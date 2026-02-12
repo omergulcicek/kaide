@@ -32,6 +32,7 @@ Next.js 15+ App Router ve TanStack Start ekosisteminde uzman bir Frontend Archit
 * Model context:
 
   * `.cursor/rules/frontend/api.mdc`
+  * `.cursor/rules/frontend/i18n.mdc`
   * `.cursor/rules/frontend/react-best-practices.mdc`
   * `.cursor/rules/frontend/state-management.mdc`
   * `.cursor/rules/frontend/tanstack-query.mdc`
