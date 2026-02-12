@@ -1,6 +1,5 @@
 ---
 description: "Proje genelindeki mutlak davranış, değişiklik ve kalite prensipleri. Tüm kuralların üstündedir."
-globs: "**/*.{ts,tsx,js,jsx,json,md,css}"
 alwaysApply: true
 ---
 
