@@ -1,26 +1,24 @@
 ---
 description: "TanStack Query kullanım standartları. API istekleri, caching, invalidation ve tip güvenliği kurallarını belirler."
 globs: "src/features/**/api/*.{ts,tsx}, src/features/**/hooks/*.{ts,tsx}, src/providers/query-provider.tsx"
-alwaysApply: true
+alwaysApply: false
 ---
 
 # TanStack Query Standartları
 
 Bu doküman, server-state yönetimi için zorunlu uygulama standartlarını içerir. AI, veri çekme veya mutasyon işlemlerinde bu kurallara %100 uymalıdır.
 
-## 1. Veri Erişim Katmanı (API Layer)
+## 1) Veri Erişim Katmanı (API Layer)
 
-* **Yerleşim:** Tüm API istekleri (fetcher fonksiyonları) ilgili feature'ın `api/` klasöründe tanımlanmalıdır.
-
-  * ✅ Örnek: `src/features/blog/api/get-posts.ts`
-* **Soyutlama:** UI bileşenleri içinde doğrudan `fetch` veya `axios` kullanılmaz. Bileşenler veriye sadece `hooks/` klasöründeki custom query hook'ları üzerinden erişir.
-* **Tip Güvenliği:** Her API fonksiyonunun giriş (params) ve çıkış (response) tipleri Zod şemaları ile doğrulanmalı ve TypeScript type olarak tanımlanmalıdır.
+* **Bileşen içinde HTTP/data fetching yasağı (tek kaynak):** → `.cursor/rules/frontend/api.mdc`. Bu dosya yalnızca hook kullanımı ve query/mutation kurallarını tanımlar.
+* **Bileşenler:** Veriye sadece `hooks/` klasöründeki custom query hook'ları üzerinden erişir.
+* **Tip Güvenliği:** Her API fonksiyonunun giriş (params) ve çıkış (response) tipleri Zod şemaları ile doğrulanmalı; genel tip politikası (any, DTO) → `.cursor/rules/frontend/typescript.mdc`
 * **Parsing Standardı:** API yanıtları doğrudan dönülmez. Zod ile `parse` edilip `z.infer` ile tip çıkarılarak return edilir.
 
   ```ts
   // src/features/posts/api/get-posts.ts
   import { z } from 'zod';
-  import axios from 'axios';
+  import { api } from '@/lib/api';
 
   const PostSchema = z.object({
     id: z.string(),
@@ -30,31 +28,18 @@ Bu doküman, server-state yönetimi için zorunlu uygulama standartlarını içe
   export type Post = z.infer<typeof PostSchema>;
 
   export const getPosts = async (): Promise<Post[]> => {
-    const { data } = await axios.get('/api/posts');
+    const { data } = await api.get('/api/posts');
     return z.array(PostSchema).parse(data);
   };
   ```
 
-## 2. Query Key Yönetimi
+## 2) Query Key Yönetimi (Özet)
 
-* **Merkezi Yapı:** Query key'ler sihirli string'ler olamaz. Her feature için bir `queryKeys` factory tanımlanmalıdır.
-* **Dinamik Keyler:** Parametre alan isteklerde key yapısı hiyerarşik olmalıdır: `['posts', 'list', { category: 'tech' }]`.
-* **Tip Güvenliği:** `as const` kullanımı zorunludur. Key factory dışına çıkılamaz.
+* **Zorunlu:** Sihirli string yasak. Her feature için `src/features/[feature]/api/query-keys.ts` içinde bir **Query Key Factory** tanımlanır; tüm key'ler bu fabrikadan türetilir.
+* **Yapı:** Hiyerarşik key (all → lists/list, details/detail), `as const`, dinamik parametreler factory fonksiyonlarına geçilir.
+* **Detay ve örnekler:** Aşağıda §7) Global Yapılandırma altındaki **Query Key Management (Mandatory)** bölümüne bakın.
 
-  ```ts
-  // src/features/posts/api/query-keys.ts
-  export const postKeys = {
-    all: ['posts'] as const,
-    lists: () => [...postKeys.all, 'list'] as const,
-    list: (filters?: { category?: string }) =>
-      [...postKeys.lists(), filters] as const,
-    details: () => [...postKeys.all, 'detail'] as const,
-    detail: (id: string) =>
-      [...postKeys.details(), id] as const,
-  };
-  ```
-
-## 3. Custom Hook Kullanımı (Zorunlu)
+## 3) Custom Hook Kullanımı (Zorunlu)
 
 * **Sarmalama:** `useQuery` ve `useMutation` doğrudan bileşen içinde çağrılmaz. Daima bir custom hook içinde sarmalanır.
 * **Dönüş Tipi:** Hook'lar, TanStack Query'nin döndürdüğü tüm objeyi (`data`, `isLoading`, `error` vb.) erişilebilir kılmalıdır.
@@ -83,8 +68,10 @@ Bu doküman, server-state yönetimi için zorunlu uygulama standartlarını içe
 
 ```ts
 // src/features/posts/api/get-posts.ts
+import { api } from '@/lib/api';
+
 export const getPosts = async (params?: { signal?: AbortSignal }) => {
-  const { data } = await axios.get('/api/posts', {
+  const { data } = await api.get('/api/posts', {
     signal: params?.signal,
   });
 
@@ -100,7 +87,7 @@ export const useGetPosts = () => {
 };
 ```
 
-## 4. Pagination & Infinite Query Standardı
+## 4) Pagination & Infinite Query Standardı
 
 * **Pagination:** Sayfalı veri yapılarında `page` parametresi query key içine dahil edilmelidir.
 * **Infinite Query:** Liste büyüyen yapılarda `useInfiniteQuery` kullanılmalıdır.
@@ -108,7 +95,7 @@ export const useGetPosts = () => {
   ```ts
   // src/features/posts/api/get-posts-paginated.ts
   import { z } from 'zod';
-  import axios from 'axios';
+  import { api } from '@/lib/api';
 
   const PostSchema = z.object({
     id: z.string(),
@@ -124,7 +111,7 @@ export const useGetPosts = () => {
   export type PaginatedPosts = z.infer<typeof PaginatedPostsSchema>;
 
   export const getPostsPaginated = async (params: { page: number }): Promise<PaginatedPosts> => {
-    const { data } = await axios.get('/api/posts', { params });
+    const { data } = await api.get('/api/posts', { params });
     return PaginatedPostsSchema.parse(data);
   };
   ```
@@ -159,7 +146,7 @@ export const useGetPosts = () => {
   };
   ```
 
-## 5. Mutation ve Invalidation Stratejisi
+## 5) Mutation ve Invalidation Stratejisi
 
 * **Side Effects:** `useMutation` kullanıldığında, `onSuccess` içerisinde ilgili query key'ler invalidate edilmelidir.
 * **Optimistic Updates:** Kritik UX işlemlerinde tercih edilmelidir.
@@ -182,13 +169,13 @@ export const useGetPosts = () => {
   };
   ```
 
-## 6. Next.js & Server-Side Integration
+## 6) Next.js & Server-Side Integration
 
 * **Prefetching:** Kritik veriler server tarafında prefetch edilmelidir.
 * **Hydration:** `dehydrate` ve `HydrationBoundary` birlikte kullanılmalıdır.
 * **Server Actions:** Mutation işlemleri server action ile sarmalanabilir.
 
-## 7. Global Yapılandırma
+## 7) Global Yapılandırma
 
 * **Önerilen Default `staleTime`:**
 
@@ -199,34 +186,34 @@ export const useGetPosts = () => {
 
 * **Retry Stratejisi (Default):**
 
-  * `retry: 2`
-  * `retryDelay: attempt => Math.min(1000 * 2 ** attempt, 8000)`
-  * Not: 4xx hatalarda retry yapılmamalıdır (global predicate ile engellenmelidir).
+* **Global Configuration:** Retry logic ve delay stratejisi `src/providers/query-provider.tsx` içerisinde merkezi olarak yönetilir. Individual hook'larda tekrar tanımlanması yasaktır.
+* **Predicate:** 4xx serisi (özellikle 401, 403, 404) hatalarda retry mekanizması global predicate ile engellenmiş olmalıdır.
 
-    ```ts
-    // src/providers/query-provider.tsx
-    import { QueryClient } from '@tanstack/react-query';
+* **Query Key Management (Mandatory) — Detay**
 
-    export const createQueryClient = () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 60 * 1000,
-            gcTime: 10 * 60 * 1000,
-            retry: (failureCount, error) => {
-              const status = (error as any)?.status;
-              if (status && status >= 400 && status < 500) return false;
-              return failureCount < 2;
-            },
-            retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
-          },
-        },
-      });
-    ```
+* **Pattern:** Manuel string `queryKey` yasaktır. Her feature için `src/features/[feature]/api/query-keys.ts` içinde tek bir Query Key Factory tanımlanır; tüm key'ler buradan türetilir.
+* **Requirement:** Dinamik parametreler (id, filtreler) factory fonksiyonlarına geçilir; key hiçbir yerde elle yazılmaz. Özet → §2) Query Key Yönetimi.
+
+```ts
+// src/features/posts/api/query-keys.ts
+export const postKeys = {
+  all: ['posts'] as const,
+  lists: () => [...postKeys.all, 'list'] as const,
+  list: (filters?: { category?: string }) => [...postKeys.lists(), filters] as const,
+  details: () => [...postKeys.all, 'detail'] as const,
+  detail: (id: string) => [...postKeys.details(), id] as const,
+};
+
+// ❌ DONT / BAN: Manuel string
+useQuery({ queryKey: ['posts', userId], ... })
+
+// ✅ DO / MUST: Factory'dan türet
+useQuery({ queryKey: postKeys.detail(userId), ... })
+```
 
 * **Error Handling:** Global `QueryCache` ve `MutationCache` üzerinden merkezi toast entegrasyonu yapılmalıdır.
 
-## 8. UI Kullanım Standardı
+## 8) UI Kullanım Standardı
 
 ```tsx
 // src/features/posts/components/post-list.tsx
@@ -247,9 +234,8 @@ export const PostList = () => {
 };
 ```
 
-## 9. Kritik Yasaklar
+## 9) Kritik Yasaklar
 
-* ❌ UI bileşenleri içinde `useEffect` ile veri çekmek yasaktır.
-* ❌ Query key'leri manuel string olarak yazmak yasaktır.
-* ❌ API yanıtlarını tip kontrolü yapmadan kullanmak yasaktır.
-* ❌ `useQuery` / `useMutation` doğrudan component içinde çağrılamaz
+* ❌ DONT / BAN: Bileşen içinde HTTP veya data fetching (tek kaynak → **api.mdc**). Bu dosyada: `useEffect` ile veri çekmek ve `useQuery`/`useMutation` doğrudan bileşende çağırmak yasaktır; daima custom hook kullan.
+* ❌ DONT / BAN: Query key'leri manuel string olarak yazmak.
+* ❌ DONT / BAN: API yanıtlarını tip kontrolü yapmadan kullanmak (tip politikası → `.cursor/rules/frontend/typescript.mdc`).

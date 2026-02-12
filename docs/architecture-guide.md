@@ -1,109 +1,102 @@
-# architecture.md
+# architecture-guide.md
 
 ## Tech Stack
 
-- **Server State:** TanStack Query  
-- **Client State:** Zustand  
-- **Validation:** Zod  
-- **UI:** shadcn/ui + TailwindCSS  
-- **i18n:**  
-  - Next.js → next-intl  
-  - TanStack Start → Paraglide JS  
-- **API Layer:** Feature-based `features/[feature]/api` yapısı  
-- **SSR Server Calls:**  
-  - Next.js → Server Actions / Route Handlers  
-  - TanStack Start → serverFn  
+* Server State: TanStack Query
+* Client State: Zustand (Next.js ve TanStack Start’ta aynı)
+* Validation: Zod
+* UI: shadcn/ui + TailwindCSS
+* i18n:
+
+  * Next.js → next-intl
+  * TanStack Start → Paraglide JS
+* API Layer: feature-based `features/[feature]/api`
+* SSR Server Calls:
+
+  * Next.js → Server Actions / Route Handlers
+  * TanStack Start → serverFn
 
 ## Overview
 
-Bu proje **feature-based (domain odaklı)** mimari kullanır.
-Yapı hem **Next.js** hem **TanStack Start** ile uyumludur ve AI araçlarının hızlı anlaması için sade tutulmuştur.
+Feature-based (domain-driven) mimari. Hem Next.js hem TanStack Start ile uyumlu. Framework farkı yalnızca routing katmanındadır:
 
-**Framework farkı sadece routing katmanındadır:**
-
-* **Next.js:** `src/app/`
-* **TanStack Start:** `src/routes/`
-
-Diğer tüm klasör yapısı aynıdır.
+* Next.js: `src/app/`
+* TanStack Start: `src/routes/`
+  Diğer tüm yapı ortaktır.
 
 ## Folder Structure
 
 ```text
 src/
-├── app/ | routes/        # Routing layer (framework'e göre değişir)
-│
-├── features/             # Tüm business & domain logic
+├── app/ | routes/        # Routing layer
+├── features/             # Domain & business logic
 │   └── [feature-name]/
-│       ├── api/          # Server/client API fonksiyonları
-│       ├── components/   # Feature’a özel UI
+│       ├── api/          # API calls
+│       ├── components/   # Feature UI
 │       ├── hooks/        # Feature logic
-│       ├── schemas/      # Zod validation
+│       ├── schemas/      # Zod models
 │       ├── stores/       # Feature state
-│       ├── types/        # TS tipleri
+│       ├── types/        # TS types
 │       └── index.ts      # Public API
-│
-├── components/           # Global UI layer
-│   ├── ui/               # Atomic (shadcn/ui)
-│   ├── shared/           # Functional components
-│   └── layout/           # Header, Sidebar, Footer
-│
-├── hooks/                # Generic reusable hooks
-├── lib/                  # SDK, utils, axios, configs
-├── providers/            # Global context (Theme, Query, Auth)
+├── components/
+│   ├── ui/               # Atomic (shadcn)
+│   ├── shared/           # Reusable functional
+│   └── layout/           # Layout parts
+├── hooks/                # Generic hooks
+├── lib/                  # SDK, utils, axios, config
+├── providers/            # Global context
 ├── stores/               # Global state
-├── schemas/              # Shared validation models
-├── types/                # Global TypeScript types
-├── constants/            # Enums & static values
-├── config/               # App & SEO config
-├── styles/               # Tailwind & base CSS
+├── schemas/              # Shared validation
+├── types/                # Global TS types
+├── constants/            # Static values
+├── config/               # App/SEO config
+├── styles/               # Tailwind/base CSS
 ├── i18n/                 # Localization setup
-├── messages/             # Translation files
+├── messages/             # Translations
 └── env.ts                # Env validation
 ```
 
-## Next.js Client / Server Component Kuralı
+## Next.js Client/Server Rule
 
-Next.js App Router kullanılırken:
+* Default: Server Component
+* `"use client"` yalnızca gerekli olduğunda
+* Data fetching öncelikle server tarafında
+* `features/[feature]/components` hem server hem client içerebilir
+* Client boundary en dar noktada tutulur
 
-* Varsayılan yaklaşım: **Server Component**
-* Tarayıcı API, event handler veya local state gerekiyorsa → `"use client"`
-* Data fetching mümkün olduğunca server tarafında yapılır
-* Feature içindeki `components/` klasörü hem server hem client bileşen barındırabilir
-* Client’a geçiş mümkün olan en dar noktada yapılır
+## API & Server Boundary
 
-## API & Server Boundary Kuralı
+* Component içinde HTTP yazılmaz
+* Tüm istekler `features/[feature]/api`
+* UI sadece tüketir
+* SSR sayfalarda:
 
-* API çağrıları doğrudan component içinde yazılmaz
-* Tüm istekler `features/[feature]/api` altında tanımlanır
-* Component’ler sadece import ederek kullanır
+  * Server işlemleri → serverFn / Server Actions
+  * DB, Supabase, secret erişimi sadece server’da
+  * Client/Server ayrımı API layer’da çözülür
 
-**SSR çalışan sayfalarda:**
+## State Placement
 
-* Server tarafı işlemler **serverFn** olarak yazılır
-* Supabase, DB, secret erişimi sadece server tarafında yapılır
-* Client/Server ayrımı API katmanında çözülür, UI katmanı sadece tüketir
+* Tek feature → `features/[feature]/stores`
+* Paylaşılan → `src/stores`
 
-## State Yerleşim Kuralı
+## Cross-Feature Communication
 
-* Sadece tek bir feature’ı ilgilendiriyorsa →
-  `features/[feature]/stores`
+Bir feature başka bir feature'ın store'una veya hook'una erişemez. İletişim sadece 'Shared' katmanı veya 'Parent Component' üzerinden prop ile yapılır.
 
-* Birden fazla feature arasında paylaşılıyorsa →
-  `src/stores`
+## Core Architecture Rules
 
-## Temel Mimari Kurallar
-
-1. Tüm iş mantığı `features/` içinde yaşar
+1. Tüm iş mantığı `features/` içinde
 2. Feature’lar birbirini doğrudan import etmez
-3. Ortak/generic kodlar global klasörlerde tutulur
-4. Tekrar kullanılan logic global katmana taşınır
-5. Her feature dışarıya sadece `index.ts` üzerinden açılır
-6. API katmanı UI’dan ayrıdır, doğrudan component içine yazılmaz
+3. Ortak kod global katmanda tutulur
+4. Tekrar eden logic global’e taşınır
+5. Feature dışa açılımı sadece `index.ts`
+6. API layer UI’dan ayrıdır
 
 ## Architecture Type
 
-* **Feature-based**
-* **Hybrid (global core + feature modules)**
-* **Scalable for large teams**
-* **Next.js & TanStack uyumlu**
-* **AI-friendly structure**
+* Feature-based
+* Hybrid (global core + feature modules)
+* Scalable for large teams
+* Next.js & TanStack Start compatible
+* AI-oriented structure

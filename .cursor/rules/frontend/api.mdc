@@ -1,355 +1,206 @@
 ---
-description: "Merkezi axios API katmanı. Interceptor, error modeli, auth refresh, pagination ve TanStack Query entegrasyon kurallarını tanımlar."
-globs: "src/lib/api.ts, src/features/**/api/*.{ts,tsx}"
-alwaysApply: true
+description: "HTTP katmanı standardı. Client-side TanStack Query için axios; Next.js server-side caching/revalidation için native fetch kuralları."
+globs: "src/lib/api.ts,src/features/**/api/*.{ts,tsx}"
+alwaysApply: false
 ---
+
+# API Layer Standards (LLM Guardrails)
 
 ## Amaç
 
-Tekil, merkezi, deterministik, type-safe HTTP katmanı.
-Tüm istekler tek axios instance üzerinden yürütülür.
-UI ve Query katmanı yalnızca feature API fonksiyonlarını tüketir.
+Deterministik, type-safe HTTP katmanı. Client/server boundary net: Client + TanStack Query → axios; Next.js server-side caching/revalidation gereken yerler → native fetch.
 
 Referanslar:
 
-* Query davranışı → `tanstack-query.mdc`
-* Tip stratejisi → `typescript.mdc`
+* Query key/cache/invalidation → `.cursor/rules/frontend/tanstack-query.mdc`
+* Tip politikası/any/return type → `.cursor/rules/frontend/typescript.mdc`
 
-## Instance Standardı
+## 0) Hard Split (Strict Boundary)
 
-Konum:
+* **Client Boundary (TanStack Query):** Sadece `axios` instance (`@/lib/api`) kullanımı zorunludur.
+* **Server Boundary (RSC/SA/RH):**
+  * Next.js `cache`, `revalidate` veya `tags` mekanizmaları kullanılacaksa native `fetch` kullanımı zorunludur.
+  * Cache gerektirmeyen server-side operasyonlarda tutarlılık için `axios` tercih edilebilir.
 
-```
-src/lib/api.ts
-```
+## 1) Axios Instance Standardı (Client)
 
+Konum: `src/lib/api.ts`
 Kurallar:
 
 * Tek `axios.create`
 * Başka yerde instance oluşturulmaz
-* fetch kullanılmaz
-* Tüm feature’lar aynı instance’ı import eder
+* Tüm feature’lar aynı instance’ı import eder → `@/lib/api`
 
-Import path:
+## 2) Base URL & Env
 
-```
-@/lib/api
-```
-
-## Base URL & Env
-
-* Base URL env üzerinden alınır
+* Base URL env’den alınır
 * Instance içinde tanımlanır
 * Feature içinde URL birleştirme yapılmaz
 
-## Interceptor Mimarisi
+## 3) Interceptor Mimarisi (Axios)
 
-Projede yoksa kurulur ve tüm sistem bunun üzerinden ilerler.
-
-### request interceptor
-
-Sorumluluklar:
+Request interceptor:
 
 * Authorization header
-* Locale / platform metadata
-* Tenant bilgisi (varsa)
-* Idempotency / trace header
+* Locale/platform metadata
+* Tenant (varsa)
+* Trace/idempotency header
 * Request normalize
-
-### response interceptor
-
-Sorumluluklar:
-
+  Response interceptor:
 * Response unwrap
 * Error normalize
 * 401 handling
-* Token refresh akışı
-* Retry kararı (network / 5xx)
-
-Token refresh:
-
+* Token refresh
+* Retry kararı (network/5xx)
+  Token refresh:
 * Paralel 401’ler tek refresh ile çözülür
-* Refresh başarısızsa global logout tetiklenir
+* Refresh başarısızsa global logout
 
-## Error Modeli (Standart)
+## 4) Error Modeli (Standard)
 
-Tüm hatalar tek shape’e dönüştürülür:
-
-```
-ApiError {
-  code: string
-  message: string
-  status: number
-  details?: unknown
-}
-```
-
-UI katmanı raw axios error almaz.
-
-## Yerleşim
-
-Tüm endpoint fonksiyonları:
+Tüm hatalar tek tip olan `AppError` ile normalize edilir:
 
 ```
-features/[feature]/api/
+AppError { code: string; message: string; status: number; details?: unknown }
 ```
 
-Örnek:
+* **Tüm API hataları `AppError` tipine maplenmelidir.** Raw axios error UI/query katmanına taşınmaz. Interceptor veya API fonksiyonları axios/network hatalarını yakalayıp `AppError` shape'ine dönüştürür. Beklenen shape: `{ code: string; message: string; status: number; details?: unknown }`
 
-```
-features/user/api/
-  get-user.api.ts
-  get-users.api.ts
-  create-user.api.ts
-  update-user.api.ts
-  delete-user.api.ts
-```
+## 5) Yerleşim
 
-Component içinde HTTP çağrısı yazılmaz.
+Tüm endpoint fonksiyonları: `features/[feature]/api/`
 
-## Naming Convention
+**Data fetching / HTTP yasağı (tek kaynak):** Bileşen içinde HTTP veya doğrudan data fetching yasaktır. Tüm istekler `features/[feature]/api/` fonksiyonları ve TanStack Query hook’ları üzerinden yapılır. Bu kuralın tek referansı bu dosyadır; diğer kurallar (react-best-practices, tanstack-query, ui-components, state-management) buraya atıf verir.
 
-Fiil tabanlı:
+## 6) Naming
 
-* getUser
-* getUsers
-* createUser
-* updateUser
-* deleteUser
+* Fonksiyon: getUser,getUsers,createUser,updateUser,deleteUser
+* Dosya: `verb-entity.api.ts`
 
-Dosya:
-
-```
-verb-entity.api.ts
-```
-
-## Fonksiyon Standardı
+## 7) Fonksiyon Standardı (Client API)
 
 Her API fonksiyonu:
 
 * Tek endpoint’i temsil eder
 * Endpoint string sadece burada bulunur
-* Typed Promise döner
 * Axios instance kullanır
+* Typed Promise döner: `Promise<ApiResponse<T>>`
+  Tip politikası → `.cursor/rules/frontend/typescript.mdc`
 
-Return shape:
+## 8) TanStack Query Entegrasyonu (Client)
 
-```
-Promise<ApiResponse<T>>
-```
-
-`any` yasaktır.
-
-## TanStack Query Entegrasyonu
-
-Kurallar:
-
-* Query katmanı axios kullanmaz
+* Query layer axios kullanmaz
 * Sadece API fonksiyonlarını çağırır
 * Endpoint bilmez
+  Mapping: GET→query, POST/PUT/PATCH/DELETE→mutation
 
-Mapping:
-
-* GET → query
-* POST → mutation
-* PUT/PATCH → mutation
-* DELETE → mutation
-
-Query key ve cache davranışı:
-→ `tanstack-query.mdc`
-
-## Cache Invalidation Stratejisi
+## 9) Cache Invalidation
 
 Mutation sonrası:
 
-* İlgili entity query key invalidate edilir
+* İlgili entity key invalidate edilir
 * Liste + detay birlikte düşünülür
-* Invalidate kararı UI içinde değil, query layer içinde verilir
+* Karar query layer’da verilir (UI’da değil)
 
-## Pagination Standardı
+## 10) Pagination
 
-Liste endpoint’leri parametreleri:
-
-* page
-* limit
-* sort
-* filters
-
-Response shape:
+Params: `page,limit,sort,filters`
+Response:
 
 ```
-{
-  items: T[]
-  total: number
-  page: number
-  limit: number
-}
+{items:T[];total:number;page:number;limit:number}
 ```
 
 Parsing API katmanında yapılır.
 
-## Upload / Download Standardı
+## 11) Upload/Download
 
 Upload:
 
-* multipart/form-data
+* `multipart/form-data`
 * Content-Type interceptor dışında set edilmez
-
-Download:
-
-* blob responseType
+  Download:
+* `blob` responseType
 * Dosya parsing API katmanında yapılır
 
-## Type Safety
+## 12) Type Safety
 
-* Response tipleri `features/[feature]/types`
+* Response tipleri → `features/[feature]/types`
 * Zod varsa API dönüşünde parse edilir
 * Runtime validation API katmanında çözülür
-* UI raw response işlemez
+* UI raw response işlemez; DTO/domain ayrımı zorunlu
 
-→ `typescript.mdc`
+## 13) Next.js Server Fetch Rule (Cache-Aware)
 
-## Server / Client Boundary
+Next.js server-side cache/revalidate/tag gereken yerlerde axios kullanılmaz; native fetch kullanılır:
 
-Aynı API fonksiyonları:
+* `fetch(url,{cache:'force-cache'|'no-store',next:{revalidate,tags}})`
+* `revalidateTag/revalidatePath` ile uyumlu olacak şekilde tag kullanımı tercih edilir
+  Not: Bu fetch çağrıları client API layer standardını bozmaz; ayrı server boundary kuralıdır.
 
-* Client: TanStack Query
-* Server: serverFn / route handler
+## 14) Server Action Validation (Zorunlu)
 
-Secret logic sadece server boundary içinde.
+* Server Action içinde **validation zorunludur**; tüm inputlar Zod ile doğrulanmalıdır.
+* Form/request body ve searchParams gibi dışarıdan gelen veri, action gövdesine girmeden önce Zod schema ile parse edilir; hata durumunda anlamlı `AppError` veya validation mesajı dönülür.
+* Bu kural RSC/Route Handler için de tercih edilir (server boundary’ye giren tüm inputlar validate edilir).
 
-## Yasaklar
+## 15) Server/Client Boundary
 
-* fetch kullanımı
-* Feature içinde axios.create
+* Client: TanStack Query + axios API layer
+* Server: Next.js `fetch` (cache-aware) veya serverFn/route handler
+* Secret/DB erişimi sadece server boundary içinde
+
+## 16) Hard Bans
+
+* Feature içinde `axios.create`
 * Component içinde HTTP çağrısı
 * Query içinde endpoint string
 * Interceptor’ı feature içine koymak
-* Raw axios error taşımak
+* Raw axios error taşımak; tüm API hataları `AppError` tipine maplenmeden dışarı verilemez
 * Base URL’i feature içinde birleştirmek
+* `any` kullanımı → `.cursor/rules/frontend/typescript.mdc`
+* Next.js server cache/revalidate/tag gereken yerde axios ile istek yapmak
+* Server Action içinde Zod ile input validation yapmamak
 
-## Guardrails — Negatif Örnekler
+## Negatif Örnekler (Üretilmez)
 
-Aşağıdaki yanlış kullanım kalıpları üretilmemelidir.
-
-### Yeni axios instance oluşturmak (YANLIŞ)
-
-<incorrect-example>
+### ❌ DONT / BAN: Yeni axios instance
 
 ```ts
-// features/user/api/get-user.api.ts
 import axios from "axios"
-
-export const getUser = async () => {
-  const api = axios.create({ baseURL: "/api" }) // ❌ yasak
+export const getUser=async()=>{
+  const api=axios.create({baseURL:"/api"}) // ❌ DONT / BAN
   return api.get("/users/me")
 }
 ```
 
-</incorrect-example>
-
-### fetch kullanmak (YANLIŞ)
-
-<incorrect-example>
-
-```ts
-export const getUser = async () => {
-  const res = await fetch("/api/users/me") // ❌ yasak
-  return res.json()
-}
-```
-
-</incorrect-example>
-
-### Component içinde HTTP çağrısı yapmak (YANLIŞ)
-
-<incorrect-example>
+### ❌ DONT / BAN: Component içinde HTTP
 
 ```tsx
 "use client"
-import { useEffect } from "react"
+import {useEffect} from "react"
 import axios from "axios"
-
-export function Profile() {
-  useEffect(() => {
-    axios.get("/api/users/me") // ❌ yasak
-  }, [])
-
-  return null
-}
+export function Profile(){useEffect(()=>{axios.get("/api/users/me")},[]) // ❌ DONT / BAN
+return null}
 ```
 
-</incorrect-example>
-
-### Query içinde direkt axios kullanmak (YANLIŞ)
-
-<incorrect-example>
+### ❌ DONT / BAN: Query içinde endpoint/axios
 
 ```ts
-useQuery({
-  queryKey: ["user"],
-  queryFn: () => axios.get("/users/me"), // ❌ yasak
-})
+useQuery({queryKey:["user"],queryFn:()=>axios.get("/users/me")}) // ❌ DONT / BAN
+useQuery({queryKey:["user"],queryFn:()=>api.get("/users/me")}) // ❌ DONT / BAN
 ```
 
-</incorrect-example>
-
-### Endpoint string’i query katmanına koymak (YANLIŞ)
-
-<incorrect-example>
+### ❌ DONT / BAN: Next.js server cache gereken yerde axios
 
 ```ts
-useQuery({
-  queryKey: ["user"],
-  queryFn: () => api.get("/users/me"), // ❌ yasak
-})
+// ❌ DONT / BAN: RSC/route handler içinde Next cache hedefleniyorsa axios kullanma
 ```
-
-</incorrect-example>
-
-### Interceptor’ı feature içinde tanımlamak (YANLIŞ)
-
-<incorrect-example>
-
-```ts
-// features/auth/api/login.api.ts
-import api from "@/lib/api"
-
-api.interceptors.response.use(() => {}) // ❌ yasak
-```
-
-</incorrect-example>
-
-### Base URL’i feature içinde birleştirmek (YANLIŞ)
-
-<incorrect-example>
-
-```ts
-export const getUser = () => {
-  return api.get(process.env.API_URL + "/users/me") // ❌ yasak
-}
-```
-
-</incorrect-example>
-
-### any kullanmak (YANLIŞ)
-
-<incorrect-example>
-
-```ts
-export const getUser = async (): Promise<any> => { // ❌ yasak
-  return api.get("/users/me")
-}
-```
-
-</incorrect-example>
 
 ## Mimari Prensipler
 
-* Tek HTTP giriş noktası
-* Tek interceptor zinciri
+* Client: tek HTTP giriş noktası (axios) + tek interceptor zinciri
+* Server: Next.js cache ile uyumlu native fetch
 * Feature-based endpoint organizasyonu
-* End-to-end type safety
-* Deterministik error modeli
-* Query katmanı sadece tüketici
+* End-to-end type safety + deterministik error modeli
 * Ölçeklenebilir, tekrar üretilebilir, AI-stable yapı

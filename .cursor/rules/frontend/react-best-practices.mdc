@@ -1,61 +1,61 @@
 ---
-description: React bileşenleri ve hook'ları oluştururken veya refactor ederken performans, tip güvenliği ve mimari tutarlılık için kullan.
-globs: src/components/**/*.{ts,tsx},src/hooks/**/*.{ts,tsx}
+description: React lifecycle, hook logic ve data flow guardrail'ları. Stil/component yapısı → ui-components.mdc.
+globs: src/components/**/*.{ts,tsx}, src/hooks/**/*.{ts,tsx}
 alwaysApply: false
 ---
 
-# React Teknik Yasaları
+# React Technical Laws (Lifecycle · Hooks · Data Flow)
 
-## 1. Bileşen Mimarisi (Temel Kurallar)
-- **SRP Zorunluluğu:** Bir bileşen yalnızca bir sorumluluk üstlenmelidir. 150 satırı aşan bileşenleri alt bileşenlere ayır.
-- **Props Composition:** 2 seviyeden derin prop aktarımları (drilling) yerine `children` veya slot yapısını kullan.
-- **İsimlendirme:** Dosya ve bileşen isimlerinde PascalCase, hook'larda camelCase kullan. `index.tsx` dosyalarından kaçın.
+Stil, atomik hiyerarşi, semantic HTML → **`.cursor/rules/frontend/ui-components.mdc`**  
+Bileşen içinde HTTP/data fetching yasağı → **`.cursor/rules/frontend/api.mdc`** (tek kaynak). Hook ile veri çekme → **`.cursor/rules/frontend/tanstack-query.mdc`**
 
-## 2. Hook'lar ve Mantık Ayrıştırma
-- **Mantık Soyutlama:** UI dışı tüm karmaşık mantığı custom hook'lara taşı.
-- **Bağımlılık Yönetimi:** `exhaustive-deps` kuralını asla kapatma. Bağımlılık dizilerinde (dependency arrays) mümkünse sadece primitive değerler kullan.
-- **Stale Closure Önleme:** Yeni state eski state'e bağlıysa `setState(prev => ...)` (functional update) kullan.
+---
 
-## 3. Performans Bariyerleri
-- **Memoization Stratejisi:** Ağır hesaplamalar (>1ms) için `useMemo`, memoize edilmiş alt bileşenlere aktarılan fonksiyonlar için `useCallback` kullan.
-- **Render Sınırlandırma:** State'i her zaman kullanım noktasına en yakın (en alt) seviyede tut.
-- **Anonim Fonksiyonlar:** Gereksiz re-render'ı önlemek için JSX içinde anonim fonksiyon tanımlamaktan kaçın.
+## 1) Component Scope
+* **MUST** SRP: Tek sorumluluk; 150+ satır ise parçala.
+* **BAN** Deep prop drilling (2+ seviye): `children` / slot / context kullan.
+* **LIMIT** Naming: Component/file PascalCase, hook camelCase + `use`; `index.tsx` yerine explicit entry.
 
-## 4. State ve Veri Akışı
-- **Sıfır Yedeklilik:** Props değerlerini state'e eşitleme. Bunun yerine türetilmiş değişkenler (derived state) kullan.
-- **State Lifting:** State'i sadece en yakın ortak ataya kadar yükselt.
-- **Immutability:** State veya props değerlerini asla doğrudan mutate etme. Karmaşık nesneler için `immer` kullan.
+## 2) Memoization Strategy (React 19+ / Compiler Ready)
+* **AUTO:** Standart UI logic'te manuel `useMemo`/`useCallback` kullanımını azalt; React Compiler'a güven.
+* **MUST:** Context Provider `value` objeleri ve referans stabilliği kritik olan "Custom Hook" dönüş değerleri hala manuel `useMemo` ile korunmalıdır.
+* **INTENT:** Manuel memoization artık bir performans optimizasyonundan ziyade, bir "referans stabilliği taahhüdü"dür.
 
-## 5. Görsel Yapı (JSX/TSX)
-- **Semantik Etiketler:** `<main>`, `<section>`, `<nav>`, `<button>` kullan. Tıklanabilir öğeler için `<div>` kullanma.
-- **Fragments:** DOM kirliliğini önlemek için `<>...</>` (Fragments) kullan.
-- **Koşullu Render:** Basit görünürlük kontrolleri için `{condition && <Component />}`; A/B mantığı için ternary operatörü kullan.
+## 3) Hook Integrity
+* **MUST** Custom hook yalnızca Business Logic veya Complex State barındırsın.
+* **BAN** Over-engineering: Basit/local state’i hook’a taşımak. Basit state component içinde kalsın.
+* **REF** Server-state ve veri çekme (useQuery/useMutation, hook zorunluluğu) → **tanstack-query.mdc** tek kaynaktır.
 
-## 6. Hatalı vs. Doğru Örnekler
+## 4) Closure & Dependency Rules
+* **MUST** `exhaustive-deps` açık; dependency array bilinçli, kapatma yok.
+* **MUST** Önceki state’e bağlı güncellemede `setState(prev => ...)`.
+* **MUST** `useEffect` içinde kullanılan harici fonksiyon: `useEvent` veya `useCallback` ile sarmala (stale closure önleme).
 
-<incorrect-example>
-// Bileşen içinde mantık + Prop drilling
-function UserProfile({ id, theme, onUpdate }) {
-  const [data, setData] = useState(null);
-  useEffect(() => { fetchUser(id).then(setData); }, [id]);
-  
-  return <div onClick={() => onUpdate(data)} style={{color: theme}}>...</div>;
-}
-</incorrect-example>
+```tsx
+// ❌ DONT / BAN: harici fn doğrudan effect’te
+useEffect(() => { onSave(data); }, [data]);
 
-<correct-example>
-// Mantık hook'a çıkarılmış + Semantik HTML + Functional Update
-function UserProfile({ id, onUpdate }) {
-  const { data } = useUserData(id); // Custom hook kullanımı
-  
-  return (
-    <button type="button" onClick={() => onUpdate(prev => ({...prev, ...data}))}>
-      {data.name}
-    </button>
-  );
-}
-</correct-example>
+// ✅ DO / MUST: stable ref
+const stableOnSave = useEvent(onSave); // veya useCallback
+useEffect(() => { stableOnSave(data); }, [data]);
+```
 
-## 7. Operasyonel Bağlantılar
-- Klasör yapısı standartları için `docs/architecture-guide.md` dosyasına bak.
-- Geçmiş mimari kararlar için `docs/MEMORIES.md` dosyasını kontrol et.
+## 5) Side-Effect Isolation
+* **LIMIT** `useEffect` → Last resort. Sync türev → `useMemo`. Kullanıcı/event kaynaklı → handler (onClick, onChange).
+* **BAN** Sync’i effect’e, event’i effect’e taşımak.
+
+## 6) State & Data Flow
+* **BAN** Props → state eşitleme (derived value kullan).
+* **MUST** State sadece en yakın ortak ataya kaldır (lift minimally).
+* **BAN** Doğrudan mutate; karmaşık güncellemede `immer` tercih et.
+* **BAN** Aynı veriyi birden fazla state’te tutmak.
+* **BAN** Global concern (theme, auth) prop ile taşımak; context/provider kullan.
+
+## 7) Anti-Patterns (Hard)
+* Bileşen içinde data fetching / HTTP → **api.mdc** (tek kaynak); hook kullanımı → **tanstack-query.mdc**
+* Büyük hesaplamayı render sırasında çalıştırmak.
+* Dependency array’i bilerek eksik bırakmak.
+
+## 8) Operational Links
+* Klasör mimarisi: `docs/architecture-guide.md`
+* Karar geçmişi: `docs/MEMORIES.md`

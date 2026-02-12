@@ -1,47 +1,74 @@
 ---
-description: "Proje genelindeki mutlak kurallar ve evrensel çalışma prensipleri. Her zaman geçerlidir ve tüm kuralların temelidir."
+description: "Proje genelindeki mutlak davranış, değişiklik ve kalite prensipleri. Tüm kuralların üstündedir."
 globs: "**/*.{ts,tsx,js,jsx,json,md,css}"
 alwaysApply: true
 ---
 
-# Core Constitution (Ana Anayasa)
+# Core Constitution (Global Guardrails)
 
-Bu dosya, proje genelinde geçerli olan en üst düzey davranış, değişiklik ve kalite prensiplerini tanımlar. Tüm işlemlerde bu kurallar önceliklidir.
+Bu dosya tüm kuralların temelidir. Çelişki durumunda bu dosya önceliklidir.
 
-## 1. Modification Principles (Değişiklik İlkeleri)
-- **Search-First (Önce Araştır):** Yeni kod yazmadan önce mevcut pattern’leri incele. Tekerleği yeniden icat etmek yerine projedeki yerleşik çözümleri takip et.
-- **Folder Structure (Klasör Yapısı):** Yeni bir dizin oluşturmadan önce `docs/architecture.md` dosyasını kontrol et ve mevcut hiyerarşiye sadık kal.
-- **Minimal Intervention (Minimum Müdahale):** Sadece gerekli alanı değiştir. İlgisiz kodları taşıma veya kapsam dışı geniş refactor işlemlerinden kaçın.
-- **No Placeholders (Yer Tutucu Yasağı):** Kod bloklarında `// ... existing code` kullanma. Değişiklikleri her zaman eksiksiz ve çalışır şekilde sun.
-- **Truth Prioritization (Gerçeklik Önceliği):** Mevcut kodu birincil rehber olarak kullan. Mantık hatası veya standart dışı yapı fark edersen en iyi pratiklere başvur ve kullanıcıyı uyar.
+## 1) Modification Principles (Strict)
 
-## 2. Housekeeping & Clean Code (Temizlik ve Temiz Kod)
-- **Boy Scout Rule (İzci Kuralı):** Dokunulan her dosyayı bulduğundan daha temiz bırak. Kullanılmayan import’ları, `console.log` ifadelerini ve ölü kodları temizle.
-- **Naming (İsimlendirme):** Tüm dosya ve klasör isimleri `kebab-case` olmalıdır.
-- **Clarity Over Complexity (Sadelik Önceliği):** Kod yalnızca çalışır değil; okunabilir ve sürdürülebilir olmalıdır. Akıllıca ama karmaşık çözümler yerine sade ve açık olanı tercih et.
+* **Search First:** Yeni kod yazmadan önce mevcut pattern’leri ve benzer implementasyonları incele.
+* **Follow Architecture:** Yeni klasör/dizin oluşturmadan önce `docs/architecture-guide.md` referans alınır.
+* **Minimal Intervention:** Sadece gerekli alan değiştirilir. Kapsam dışı refactor yapılmaz.
+* **No Placeholders:**
 
-## 3. Decision & Communication (Karar ve İletişim)
-- **No Assumptions (Varsayım Yapma):** Gereksinimler belirsizse varsayımda bulunma; kısa ve net sorular sorarak netlik kazan.
-- **Direct & Technical (Doğrudan ve Teknik):** Gereksiz övgü veya dolgu cümleleri kullanma. Saf teknik gerçeklere ve aksiyonlara odaklan.
-- **Explain When It Matters (Gerektiğinde Açıkla):** Mimari veya kritik karar noktalarında çözümün mantığını kısa ve net şekilde açıkla.
+  * `// ...existing code`
+  * `// TODO: implement later`
+  * Eksik snippet yasak.
+    Her zaman çalışır ve tam kod üret.
+* **Source of Truth:** Mevcut kod tabanı birincil referanstır.
+  Standart dışı veya hatalı yapı görülürse:
 
-## 4. Error & Security Boundaries (Hata ve Güvenlik Sınırları)
-- **Explicit Error Handling (Açık Hata Yönetimi):** Hataları asla sessizce yutma. Her zaman anlaşılır ve izlenebilir hata yönetimi yapıları kullan.
-- **Secret Protection (Gizli Bilgi Koruması):** `.env` ve benzeri gizli dosyaların içeriğini asla ifşa etme, çıktı olarak verme veya chat geçmişine yansıtma.
-- **Dependency Awareness (Bağımlılık Bilinci):** Yeni paket eklemeden önce mevcut çözümleri kontrol et. Gerekliyse onay iste.
+  * best-practice uygulanır
+  * kısa teknik uyarı yapılır
 
-## 5. Validation & Version Control (Doğrulama ve Kontrol)
-- **Deterministic Validation (Kesin Doğrulama):** Değişiklik sonrası varsa linter veya type-check komutlarını çalıştırarak standartlara uyumu doğrula.
-- **Conventional Commits (Standart Commitler):** Değişiklikler için `feat:`, `fix:`, `refactor:`, `chore:` formatında kısa ve açıklayıcı **İngilizce** mesajlar hazırla.
+## 2) Code Hygiene
 
-## 6. Architectural Examples (Good vs Bad) (Mimari Örnekler)
+* **Boy Scout Rule:** Dokunulan dosya daha temiz bırakılır:
 
-### Logic & Handling (Mantık Yönetimi)
+  * unused import sil
+  * `console.log` kaldır
+  * ölü kod temizle
+* **Naming:** Tüm dosya/klasör isimleri `kebab-case`.
+
+## 3) Error & Security Boundaries (Strict)
+
+* **No Silent Failures:** Hata yutmak yasak. İzlenebilir error handling zorunlu.
+* **Secret Protection:**
+
+  * `.env`
+  * token
+  * key
+  * credential
+    İçerikleri asla gösterme, loglama, üretme.
+* **Dependency Awareness:**
+  Yeni paket eklemeden önce:
+
+  * mevcut çözüm var mı kontrol et
+  * gerekiyorsa onay iste
+
+## 4) Validation Discipline
+
+* **Deterministic Validation:**
+  Değişiklik sonrası varsa:
+
+  * type-check
+  * linter
+    standartlara uyum gözetilir.
+* **Commit Standard:** Use Conventional Commits.
+
+## 5) Architectural Enforcement Examples
+
+### Error Handling
+
 ```js
-// ❌ Bad — Sessiz hata yönetimi ve belirsiz davranış
+// ❌ DONT / BAN:
 try { process(data); } catch (e) {}
 
-// ✅ Good — Açık ve izlenebilir hata yönetimi
+// ✅ DO / MUST:
 try {
   process(data);
 } catch (error) {
@@ -49,15 +76,16 @@ try {
 }
 ```
 
-### Modification Style (Modifikasyon Stili)
+### Modification Style
+
 ```js
-// ❌ Bad — Yer tutucu (Placeholder) kullanımı
+// ❌ DONT / BAN:
 export const Header = () => {
-  // ... existing code
+  // ...existing code
   return <nav>New Link</nav>;
 };
 
-// ✅ Good — Eksiksiz ve çalışır kod sunumu
+// ✅ DO / MUST:
 export const Header = () => {
   return (
     <header>
@@ -66,3 +94,4 @@ export const Header = () => {
     </header>
   );
 };
+```

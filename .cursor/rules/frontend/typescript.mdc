@@ -1,204 +1,168 @@
 ---
-description: "TypeScript uygulama standartları ve tip güvenliği kuralları. .ts ve .tsx dosyalarında her zaman uygulanır."
+description: "TypeScript Staff-level tip güvenliği: Zod SSOT, zero-cast, template literals, tip performansı. Tüm .ts/.tsx dosyalarında uygulanır."
 globs: "**/*.{ts,tsx}"
-alwaysApply: true
+alwaysApply: false
 ---
 
-# TypeScript Standards (Frontend Architect Edition)
+# TypeScript Standards — Staff Level (LLM Guardrails)
 
-Bu doküman, projede maksimum type-safety, sürdürülebilirlik ve ölçeklenebilirlik sağlamak için zorunlu kuralları tanımlar.
+Maksimum type-safety, tek kaynak doğruluk (SSOT), sıfır assertion toleransı ve tip performansı için zorunlu kurallar.
 
-## 1) Type Definition Strategy
+## 1) Zod-First Single Source of Truth (ZORUNLU)
 
-### Hybrid Model (Zorunlu)
-- **interface**
-  - API yanıtları (DTO)
-  - Domain modelleri
-  - Dışa açılan public contract’lar
-  - Extend edilmesi beklenen yapılar
-- **type**
-  - Component Props
-  - State yapıları
-  - Union / Intersection
-  - Utility ve mapped types
-  - Function signatures
+### Kural
 
-### Naming
-- Prefix kullanma.
-  - ❌ `IUser`, `TUser`
-  - ✅ `User`
+* Domain modelleri ve API kontratları **yalnızca Zod şemaları** ile tanımlanır.
+* Tipler **sadece** `z.infer<typeof Schema>` ile türetilir.
+* **Type duplication yasak:** Aynı yapı için hem `interface` hem `type` yazılamaz; tek şema, tek infer.
 
-## 2) Data Modeling Rules
-
-### Array Tanımı
-- Her zaman kısa sözdizimi: `T[]`
-- `Array<T>` sadece nested generic zorunluluğunda kullanılabilir.
+### Uygulama
 
 ```ts
-const users: User[] = []
+import { z } from "zod"
+
+export const UserSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1)
+})
+export type User = z.infer<typeof UserSchema>
+
+export const UserDTOSchema = z.object({
+  id: z.string(),
+  full_name: z.string()
+})
+export type UserDTO = z.infer<typeof UserDTOSchema>
+
+export function mapUser(dto: UserDTO): User {
+  return UserSchema.parse({ id: dto.id, name: dto.full_name })
+}
 ```
 
-### Enum Kullanımı
-- Native `enum` yasak.
-- Literal / Union zorunlu.
+### Ne Zaman interface/type Serbest?
+
+* **Component props**, **local state**, **union/intersection**, **function signatures** → `type` (Zod’dan türetilmiş tiplerle kullanılır).
+* Zod’a taşınamayan 3rd-party tip uyumsuzlukları için **yalnızca** dar kapsamlı adapter tipleri; dokümante edilir.
+
+## 2) Type Definition Strategy (Zod Sonrası)
+
+### Hybrid Model
+
+* **Zod + z.infer:** Domain, DTO, public API contract.
+* **type:** Props, state, union/intersection, utility/mapped types, function signatures.
+
+### Naming
+
+* Prefix yasak: ❌ `IUser`, `TUser` → ✅ `User`, `UserSchema`.
+
+## 3) Data Modeling Rules
+
+### Arrays
+
+* Standart: `T[]`. `Array<T>` sadece nested generic zorunluysa.
+
+### Enums
+
+* Native `enum` yasak. Literal union veya Zod enum.
 
 ```ts
-type Status = 'active' | 'inactive'
+const StatusSchema = z.enum(["active", "inactive"])
+type Status = z.infer<typeof StatusSchema>
 ```
 
 ### Const Assertions
-Değişmeyecek sabitlerde `as const` kullan.
 
 ```ts
-const ROLES = ['admin', 'user'] as const
+const ROLES = ["admin", "user"] as const
 type Role = (typeof ROLES)[number]
 ```
 
-### Discriminated Union (State için zorunlu pattern)
+### Discriminated Union
 
 ```ts
-type Result<T> =
-  | { type: 'success'; data: T }
-  | { type: 'error'; message: string }
-  | { type: 'loading' }
+const ResultSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("success"), data: z.unknown() }),
+  z.object({ type: z.literal("error"), message: z.string() }),
+  z.object({ type: z.literal("loading") })
+])
+type Result<T> = z.infer<typeof ResultSchema>
 ```
 
-## 3) Immutability First
+## 4) Immutability First
 
-Varsayılan yaklaşım: immutable data.
+* `readonly`, `Readonly<T>`, `as const`. State mutation yasak.
+* Şemada gerekirse `.readonly()` veya türetilmiş tipi `Readonly<z.infer<typeof X>>` ile kullan.
 
-- `readonly`
-- `Readonly<T>`
-- `as const`
+## 5) Casting & Assertion — Zero Tolerance
 
-```ts
-type User = Readonly<{
-  id: string
-  name: string
-}>
-```
+### `as AnyType` Yasak
 
-State mutation pattern’leri yasak.
+* **%100 yasak** (istisna: `*.test.ts`, `*.spec.ts`, `*.test.tsx`, `*.spec.tsx`).
+* 3rd-party uyumsuzlukta bile `as` kullanılmaz; adapter fonksiyon + Zod parse veya `satisfies` ile sınırlı tip daraltma.
 
-## 4) Strictness & Safety
+### Zorunlu Assertion Gerekiyorsa
 
-### Any Policy
-- `any` yasak.
-- Alternatifler:
-  - `unknown`
-  - generic
-  - doğru modelleme
-
-### Type Casting Policy
-- `as` kaçınılmalı.
-- Sadece:
-  - 3rd-party uyumsuzluk
-  - runtime doğrulama sonrası
-- Zorunluysa `// eslint-disable-line` ile sınırla.
-
-```ts
-const value = thirdParty as unknown as DesiredType // eslint-disable-line
-```
-
-### Explicit Return Types (Zorunlu)
-Export edilen tüm fonksiyonların dönüş tipi yazılır.
-
-```ts
-export function getUser(): Promise<User> {
-  return api.get<User>('/user')
-}
-```
-
-### Null Safety
-- Optional alanlar: `?`
-- Güvenli erişim: `?.`, `??`
-
-```ts
-const city = user.address?.city ?? 'unknown'
-```
-
-## 5) Type Boundaries (Kritik)
-
-API → Domain dönüşümü zorunlu. DTO tipi UI içinde doğrudan kullanılmaz.
-
-```ts
-export interface UserDTO {
-  id: string
-  full_name: string
-}
-
-export interface User {
-  id: string
-  name: string
-}
-
-export function mapUser(dto: UserDTO): User {
-  return { id: dto.id, name: dto.full_name }
-}
-```
-
-## 6) Unknown First Strategy
-
-Dış veri:
-- önce `unknown`
-- sonra parse/validate
-- sonra modele çevir
-
-```ts
-export function parseUser(data: unknown): User {
-  if (
-    typeof data === 'object' &&
-    data !== null &&
-    'id' in data &&
-    'name' in data
-  ) {
-    const d = data as { id: string; name: string }
-    return { id: d.id, name: d.name }
-  }
-
-  throw new Error('Invalid user')
-}
-```
-
-## 7) Type Guards (Zorunlu)
-
-Union ayrımı için custom guard yaz.
-
-```ts
-type Admin = User & { permissions: string[] }
-
-export function isAdmin(user: User | Admin): user is Admin {
-  return 'permissions' in user
-}
-```
-
-## 8) Advanced Type Safety
-
-### Branded Types (Domain kritik alanlar)
-
-```ts
-export type UserId = string & { readonly brand: 'UserId' }
-
-export function asUserId(id: string): UserId {
-  return id as UserId
-}
-```
-
-### satisfies (TS 4.9+)
-Shape kontrolü için kullan.
+* **satisfies** kullan. Tip daraltma + literal koruma.
 
 ```ts
 type ApiConfig = { retry: number; timeout: number }
-
 export const config = {
   retry: 3,
   timeout: 5000
 } satisfies ApiConfig
 ```
 
-## 9) Generics Standards
+### Non-Null Assertion (`!`) Yasak
 
-Constraint kullan.
+* `!` kullanılamaz. Alternatifler:
+  * Optional Chaining: `value?.prop`
+  * Nullish coalescing: `value ?? default`
+  * Zod ile parse: `Schema.parse(input)` veya `Schema.safeParse(input)` sonrası tip garantisi.
+
+## 6) Strictness & Safety
+
+### Any Policy
+
+* `any` yasak. Alternatifler: `unknown`, generics (constraint’li), Zod ile doğru modelleme.
+
+### Explicit Return Types
+
+* Export edilen tüm fonksiyonlarda dönüş tipi yazılır.
+
+### Null Safety
+
+* Optional: `?`, güvenli erişim: `?.`, `??`. Dış veri Zod ile validate edilir.
+
+## 7) Type Boundaries (Critical)
+
+* DTO yalnızca Zod şeması + `z.infer`. UI/domain içinde DTO doğrudan kullanılmaz; map/parse ile domain tipine çevrilir.
+* Dış veri akışı: `unknown` → Zod parse → domain tip. Manuel type guard yerine şema parse tercih edilir.
+
+```ts
+export function parseUser(data: unknown): User {
+  return UserSchema.parse(data)
+}
+```
+
+## 8) Advanced Type Inference & Generics
+
+### Bariyer Kuralları
+
+* Generic fonksiyonlarda **`any` veya `unknown` ile kaçış yasak.** Her generic parametre anlamlı bir constraint ile sınırlanır.
+* Varsayılan: `T extends object` (veya daha dar: `Record<string, unknown>`, `z.ZodType`, vb.).
+* `infer` kullanımı yalnızca utility type veya tek sorumluluklu conditional type içinde; karmaşık nested ternary yazılamaz.
+
+### Conditional Types
+
+* Karmaşık conditional'lar "nested ternaries" ile değil, **isimlendirilmiş utility type** ile yazılır.
+
+```ts
+// ✅ DO / MUST: Tek seviye conditional, isimlendirilmiş
+type ToJsonPrimitive<T> = T extends Date ? string : T extends number | string | boolean ? T : never
+
+// ❌ DONT / BAN: Okunaksız nested ternary zinciri
+```
+
+### Generic Constraint Zorunluluğu
 
 ```ts
 export function getKey<T extends object, K extends keyof T>(obj: T, key: K): T[K] {
@@ -206,52 +170,73 @@ export function getKey<T extends object, K extends keyof T>(obj: T, key: K): T[K
 }
 ```
 
-Genel güvenli sınır:
+* `T extends object` olmadan `T` kullanılamaz. Güvenli üst sınır: `Record<string, unknown>` (any değil).
+
+## 9) Template Literal Types & Branded Types (Genişletilmiş)
+
+### Template Literal Types (Zorunlu Alanlar)
+
+* URL path’leri, hex renkleri, özel ID formatları **template literal type** ile modellenir.
+
 ```ts
-type AnyObject = Record<string, unknown>
+type ApiPath = `/api/${"users" | "posts"}/${string}`
+type HexColor = `#${string}` // veya daha dar: `#${[0-9a-fA-F]{6}}` benzeri
+type UUID = `${string}-${string}-${string}-${string}-${string}`
 ```
 
-## 10) Error Prevention Rules
+### Branded Types (Opaque)
 
-- Magic string yasak → literal type üret.
-- Derin state tipleri `Readonly` ile korunur.
-- Props tipleri her zaman `type` ile tanımlanır.
-- Public helper’larda return type zorunlu.
+* Sadece ID’ler değil; **para birimleri**, **hassas ölçü birimleri** (fiyat, miktar, oran) için de kullanılır.
 
-## 11) Good vs Bad
-
-### Naming
 ```ts
-// ❌
-interface IUser { name: string }
+type UserId = string & { readonly brand: "UserId" }
+type Currency = "TRY" | "USD" | "EUR"
+type Amount = number & { readonly brand: "Amount"; readonly currency: Currency }
+type Percent = number & { readonly brand: "Percent" }
 
-// ✅
-interface User { name: string }
+function asUserId(id: string): UserId {
+  return id as UserId // ONLY allowed use of `as`: single-line branded factory; nowhere else (except *.test.ts / *.spec.ts)
+}
 ```
 
-### Any
-```ts
-// ❌
-const data: any = response.data
+* **`as` exception (strict):** The only permitted use of `as` outside test files is the pattern above: a single-line return inside a named factory function that produces a branded/opaque type. Everywhere else in the codebase `as` is banned. Branded factories are exported from one place only.
 
-// ✅
-const data: unknown = response.data
+## 10) Type Performance & Complexity
+
+### Derinlik Sınırı
+
+* **Deeply recursive types** yasak. TypeScript sunucusunu kilitleyebilecek özyinelemeli tipler (özellikle 3+ seviye recursive) yazılamaz.
+* Recursion gerekiyorsa: sabit derinlik (örn. 2–3 seviye) veya recursive type yerine iteratif yapı (dizi/nesne sabit derinlik).
+
+### Type-Soup Yasak
+
+* **Constraint**: Pick, Omit, Partial gibi utility type zincirleri yasaktır.
+* **Requirement**: Her domain ihtiyacı için ayrı Zod şeması tanımlanmalı ve tipler z.infer ile türetilmelidir.
+
+```ts
+// ❌ DONT / BAN: Type-soup
+type PartialUser = Partial<Pick<User, "name">> & Omit<User, "name">
+
+// ✅ DO / MUST: Ayrı şema
+const UserUpdateSchema = UserSchema.partial({ name: true })
+type UserUpdate = z.infer<typeof UserUpdateSchema>
 ```
 
-### Enum
-```ts
-// ❌
-enum Role { Admin, User }
+## 11) Type Guards
 
-// ✅
-type Role = 'admin' | 'user'
+* Zod kullanıldığında `Schema.safeParse` veya `Schema.parse` birincil doğrulama yöntemidir.
+* Runtime ayrım gereken union’larda type guard kullanılabilir.
+
+```ts
+function isAdmin(user: User | Admin): user is Admin {
+  return "permissions" in user
+}
 ```
 
-### Immutable Model
-```ts
-// ❌
-type User = { name: string }
+## 12) Error Prevention (Hard)
 
-// ✅
-type User = Readonly<{ name: string }>
-```
+* Magic string yasak → literal type veya Zod enum.
+* Deep state tipleri `Readonly` ile korunur.
+* Props tipleri `type` ile; public helper’larda return type zorunlu.
+* DTO tipi domain/UI içine sızamaz; her zaman map/parse ile domain’e çevrilir.
+* Test dosyaları dışında `as AnyType` ve `!` kullanılmaz.

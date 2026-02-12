@@ -1,0 +1,77 @@
+---
+description: "Client state (Zustand) kuralları. Store yerleşimi, isimlendirme ve anti-pattern sınırları."
+globs: "src/stores/**/*.ts, src/features/**/stores/**/*.ts"
+alwaysApply: false
+---
+
+# Zustand State Management
+
+## 1) Library & Placement
+- **Standard:** Tüm projede **Zustand** zorunludur (Next.js ve TanStack Start farketmez; client state tek stack).
+- **Single Source of Truth:** - Shared/Global: `src/stores/[name].store.ts`
+  - Feature-based: `src/features/[feature]/stores/[name].store.ts`
+- **Isolation:** Feature store'ları sadece kendi klasöründen veya `index.ts` (public API) üzerinden dışa açılır.
+
+## 2) Server vs Client State
+- **Server State:** API verileri için **TanStack Query** kullan (Bkz: `.cursor/rules/frontend/tanstack-query.mdc`). Store'da cache tutma.
+- **Client State:** UI durumu, form aşamaları, modal/sidebar state'i.
+
+## 3) Implementation Rules
+- **Naming:** Hook adı `use[Name]Store` olmalıdır. Dosya adı `kebab-case.store.ts`.
+- **Atomic Selectors (Mandatory):** Render performansı için state her zaman selector ile tüketilmelidir. 
+  - `const user = useUserStore(s => s.user);` (✅ DO / MUST)
+  - `const { user } = useUserStore();` (❌ DONT / BAN)
+- **Async Logic:** Store içinde HTTP çağrısı yapma. Async operasyonları Hook veya API katmanında tut. HTTP/data fetching yasağı ve yerleşim → `.cursor/rules/frontend/api.mdc`
+
+## 4) Anti-Patterns (Restrictions)
+- **No Prop-Drilling:** Store verisini prop olarak geçme; alt bileşende selector kullan.
+- **No High-Freq State:** Text input veya scroll pozisyonu gibi çok sık değişen verileri store'da tutma (Local state kullan).
+- **No Side-Effects:** Store action'ları pure olmalı; `localStorage` veya `window` müdahalesi middleware ile yapılmalı.
+- **No Logic in Selectors:** Ağır hesaplamaları selector yerine `useMemo` ile yap.
+- **SSR Safety:** Hydration hatası riski için initial state'te `window`, `Date()` veya `Math.random()` kullanma.
+
+## 5) Safe Hydration Pattern (SSR-Safe Zustand)
+
+**Kural:** Server ve Client'ın ilk render'da (Initial Paint) ürettiği DOM birebir aynı olmalıdır. `window`, `localStorage` veya dynamic date gibi client-side veriler sadece mount sonrası (hydration tamamlanınca) UI'a yansıtılabilir.
+
+### 5.1) Hydration Guard Hook
+
+Tüm hydration kontrolleri için bu merkezi hook kullanılmalıdır.
+
+```ts
+// src/hooks/use-hydrated.ts
+import { useEffect, useState } from "react";
+
+export function useHydrated() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+  return hydrated;
+}
+```
+
+### 5.2) Store Definition (Deterministic Init)
+
+Store oluşturulurken side-effect (localStorage erişimi vb.) içeren değerler initialState olarak verilmez.
+
+### 5.3) Component Implementation (The Guard Pattern)
+
+LLM, client-specific state tüketen her bileşende `useHydrated` + tek satır guard kullanılmalıdır.
+
+```tsx
+const isHydrated = useHydrated();
+const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+const isOpen = isHydrated ? sidebarOpen : false; // Guard: SSR markup ile eşleşen fallback
+```
+
+### 5.4) Kritik Kurallar (LLM Guardrails)
+
+- **No Side-Effects in Init:** `create()` fonksiyonu içinde asla `window`, `document`, `localStorage` veya `Date()` kullanma.
+- **Persistent State:** Eğer state'in kalıcı olması gerekiyorsa (Zustand persist), `onRehydrateStorage` kullanarak hydration durumunu takip et.
+- **Flicker Prevention:** Layout shift'i önlemek için guard kullanılan alanlarda sabit boyutlu (fixed-size) container'lar veya skeleton'lar tercih et.
+- **No Manual Hydration Action:** Manuel `hydrate()` fonksiyonları yerine her zaman `useHydrated` hook'u ile UI katmanında karar ver.
+
+## 6) Exports
+
+- Feature store'u dışarı sızdırma: `src/features/[feature]/index.ts` üzerinden export et.

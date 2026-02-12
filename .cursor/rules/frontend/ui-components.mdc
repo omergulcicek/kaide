@@ -1,63 +1,103 @@
 ---
-description: "UI ve bileşen geliştirme standartları. Shadcn, Tailwind ve Atomik Mimari kurallarını AI kod üretimi için zorunlu kılar."
+description: "UI bileşen üretim standartları. Shadcn, Tailwind ve atomik mimari kuralları."
 globs: "src/components/**/*.{ts,tsx}, src/features/**/components/**/*.{ts,tsx}"
-alwaysApply: true
+alwaysApply: false
 ---
 
-# UI ve Bileşen Üretim Kuralları
+# UI Component Standards (LLM Guardrails)
+AI, UI bileşeni üretirken bu hiyerarşi ve teknik bariyerlere uyar.
 
-Bileşenleri oluştururken veya düzenlerken bu talimatları kesinlikle takip et.
+## 1) Component Placement (Strict Hierarchy)
+* **Atomic — `src/components/ui/`**
+  * Saf, stateless, shadcn tabanlı primitive’ler.
+  * API, TanStack Query, global store bağımlılığı yasak.
 
-## 1. Bileşen Yerleşimi (Katı Hiyerarşi)
-- **Atomik (src/components/ui/):** Yalnızca saf, state tutmayan (stateless), shadcn tabanlı temel bileşenler. API veya Global Store bağımlılığı olamaz.
-- **Paylaşılan (src/components/shared/):** Birden fazla feature tarafından kullanılan fonksiyonel yapılar (Örn: `DataTable`, `FileUpload`).
-- **Feature (src/features/[name]/components/):** İş mantığı içeren, domaine özel bileşenler.
+* **Shared — `src/components/shared/`**
+  * Birden fazla feature tarafından kullanılan fonksiyonel bileşenler.
+  * Domain bağımlılığı minimal olmalı.
 
-## 2. Stil Protokolü
-- **Sadece Tailwind:** Stil işlemleri için yalnızca Tailwind CSS sınıflarını kullan.
-- **Sınıf Birleştirme:** Koşullu sınıflar için her zaman `@/lib/utils` içindeki `cn()` yardımcı fonksiyonunu kullan.
-- **Mobil Öncelik:** Sınıfları mobil öncelikli (mobile-first) sırayla uygula (Örn: `p-4 md:p-8`).
-- **Tasarım Tokenları:** Sabit hex/rgb değerleri yerine tema değişkenlerini (Örn: `text-primary`, `bg-background`) kullan.
-- **UI Bütünlüğü:** Açıkça istenmediği sürece varsayılan shadcn stillerini değiştirme. Tasarım sistemi tutarlılığını koru.
+* **Feature — `src/features/[name]/components/`**
+  * Domain logic içeren bileşenler.
+  * Hook, query ve store bağımlılığı burada olabilir.
 
-## 3. Uygulama Standartları
-- **Exportlar:** Sadece **Named Export** kullan. Asla `default export` kullanma.
-- **Proplar:** Bileşen proplarını TypeScript `type` kullanarak tanımla.
-- **İkonlar:** Sadece **Lucide React** ikonlarını kullan. Varsayılan boyut: `size={16}`. `aria-hidden="true"` ekle.
-- **Bildirimler:** Tüm toast bildirimleri için **Shadcn Sonner** kullan.
+## 2) Styling Protocol (Strict)
+* **Tailwind Only:** CSS module, styled-components, inline style yasak.
+* **Class Merge:** Koşullu class için yalnızca `cn()` → `@/lib/utils`.
+* **Mobile First:** Responsive sıralama mobile-first olmalı.
+  * `p-4 md:p-8`
+* **Design Tokens:** Hex/rgb yasak.
+  * `text-primary`, `bg-background`, `border-muted`
+* **Shadcn Integrity:** Açıkça istenmediği sürece default shadcn stilleri override edilmez.
 
-## 4. Next.js ve Etkileşim Sınırları
-- **Varsayılan:** Tüm bileşenler varsayılan olarak **Server Component**'tir.
-- **Client Direktifi:** `"use client"` direktifini, yalnızca hook (useState, useEffect) veya event listener (onClick) gerektiğinde, mümkün olan en küçük yaprak bileşene (leaf component) ekle.
-- **Veri Çekme:** İlk sayfa yüklemesindeki (initial load) verileri Server Component'lerde çek ve proplarla aktar; ancak kullanıcı etkileşimi (tıklama, form gönderimi vb.) gerektiren dinamik veri işlemlerini Client Component'lerde TanStack Query kullanarak yönet.
+## 3) Implementation Rules
+* **Exports:** Sadece named export. `default export` yasak.
+* **Props Typing:** Props her zaman `type` ile tanımlanır.
+* **Icons:**
+  * Sadece `lucide-react`
+  * Default: `size={16}`
+  * Dekoratif ikon: `aria-hidden="true"`
+* **Toasts:** Tüm bildirimler → shadcn Sonner.
 
-## 5. Form Mimarisi
-- **Bileşenler:** Formları `@/components/ui` altındaki atomik bileşenleri kullanarak inşa et.
-- **Doğrulama:** Projede belirtilen **Zod** ve **React Hook Form** (veya TanStack Form) entegrasyonunu sağla.
-- **Shadcn Pattern:** Resmi Shadcn form desenini sıkı bir şekilde takip et (`FormField` sarmalayıcıları, `FormItem`, `FormLabel`, `FormMessage`).
-- **Semantik:** Erişilebilirlik (A11y) için tüm inputların etiketler (labels) ve hata mesajlarıyla programatik olarak bağlandığından emin ol.
+## 4) Next.js Component Boundaries
+* **Default:** Tüm bileşenler Server Component kabul edilir.
+* **"use client" Rule:**
+  * Sadece gerektiğinde eklenir:
+    * state
+    * effect
+    * event handlers
+  * Mümkün olan en küçük leaf component’e yerleştirilir.
+* **Data Fetching Split:**
+  * Initial load → Server Component
+  * User interaction → Client Component + TanStack Query
 
-## 6. Yükleme Durumları (Skeletons)
-- **Zorunlu:** Asenkron veri tüketen her bileşen için bir `[ComponentName]Skeleton` oluştur.
-- **Temel Yapı:** `@/components/ui/skeleton` bileşenini kullan.
-- **Yerleşim Uyumu:** Skeleton'lar, orijinal bileşenin düzeni (layout), boyutları ve boşluklarıyla (spacing) birebir eşleşmelidir.
+## 5) Form Architecture
+* **Base Components:** `@/components/ui` atomik bileşenleri kullan.
+* **Validation:** Form şemaları için mutlaka `typescript.mdc` içindeki **Zod-First** kuralı uygulanır. Şema, feature klasöründeki `schemas/` dizininde tanımlanır.
+* **Shadcn Pattern:**
+  * `FormField`
+  * `FormItem`
+  * `FormLabel`
+  * `FormMessage`
+* **A11y:** Input ↔ label ↔ error bağı programatik olarak kurulmalı.
 
-## 7. Erişilebilirlik (A11y) Komutları
-- **Semantik:** Ana bölümler için anlamlı etiketler (`<main>`, `<nav>`, `<aside>`, `<section>`, `<article>` vb) kullan. Düzen ve stil amaçlı sarmalayıcılar için `<div>` kullanmaya devam et; ancak içeriği tanımlayan temel iskeletin semantik olmasını sağla.
-- **Odak (Focus):** Odaklanabilir öğelerin görünür odak durumlarına (focus states) sahip olduğundan emin ol.
-- **Temeller:** Erişilebilirlik özelliklerini miras almak için unstyled primitives (Radix UI / Base UI) üzerine inşa et.
+## 6) Loading States (Strict)
+* Async veri tüketen her bileşen için:
+  * `[ComponentName]Skeleton` zorunlu.
+* Base: `@/components/ui/skeleton`
+* Layout parity:
+  * Skeleton boyut, spacing ve yapı olarak gerçek bileşenle eşleşir.
 
-## 8. Good vs Bad Examples
+## 7) Accessibility (A11y Guardrails)
+* **Semantic Layout:**
+  * `<main>`, `<nav>`, `<aside>`, `<section>`, `<article>`
+* **Focus States:**
+  * Tüm interactive öğeler görünür focus state taşır.
+* **Icon-only Buttons:**
+  * Zorunlu: `aria-label`
+* **Decorative Icons:**
+  * `aria-hidden="true"`
+* **Base Primitives:**
+  * Radix/Base UI erişilebilirlik mirası korunur.
 
-### Component Composition
+## 8) Hard Bans
+* ❌ DONT / BAN: Atomic layer içinde:
+  * API çağrısı
+  * TanStack Query
+  * Global store erişimi
+* ❌ DONT / BAN: Inline style
+* ❌ DONT / BAN: Hex / rgb renk kullanımı
+* ❌ DONT / BAN: default export
+* ❌ DONT / BAN: Bileşen içinde data fetching / HTTP (tek kaynak → **api.mdc**; hook kullanımı → **tanstack-query.mdc**)
+
+## 9) Composition Example
 ```tsx
-// ❌ Bad - Bağımlı ve esnek olmayan yapı
-export const ProfileCard = ({ name }: { name: string }) => (
-  <div className="p-4 bg-white"> {name} </div>
-);
-
-// ✅ Good - Shared ve UI bileşenlerini kullanan modüler yapı
+// ✅ DO / MUST: UI + composition
 import { Card } from "@/components/ui/card";
+
+type ProfileCardProps = {
+  name: string;
+  children?: React.ReactNode;
+};
 
 export const ProfileCard = ({ name, children }: ProfileCardProps) => {
   return (
@@ -69,11 +109,8 @@ export const ProfileCard = ({ name, children }: ProfileCardProps) => {
 };
 ```
 
-### Class Merging
+## 10) Class Merging
 ```tsx
-// ❌ Bad - String birleştirme hataya açıktır
-<div className={`p-4 ${active ? 'bg-blue-500' : 'bg-gray-500'}`} />
-
-// ✅ Good - cn() ile güvenli birleştirme
-<div className={cn("p-4", active ? "bg-blue-500" : "bg-gray-500")} />
+// ✅ DO / MUST
+<div className={cn("p-4", active ? "bg-primary" : "bg-muted")} />
 ```
