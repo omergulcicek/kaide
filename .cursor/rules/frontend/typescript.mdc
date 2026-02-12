@@ -27,6 +27,7 @@ Ref: .cursor/rules/frontend/api.mdc, .cursor/rules/frontend/forms.mdc
 - **! yasak.** Alternatif: ?., ??, Zod parse/safeParse.
 - **any yasak.** Alternatif: unknown, constraint’li generic, Zod.
 - **Export fonksiyon:** return type zorunlu.
+- **Component return:** Gereksiz `: React.ReactElement` eklenmez; inference yeterli.
 - **DTO:** Sadece Zod + z.infer; UI/domain’de DTO doğrudan kullanılmaz; map/parse → domain.
   Dış veri: unknown → Zod parse → domain. Type guard yerine şema parse.
 - **Generics:** any/unknown kaçış yasak; parametre constraint’li (T extends object, Record<string, unknown>, z.ZodType).
@@ -48,6 +49,7 @@ Ref: .cursor/rules/frontend/api.mdc, .cursor/rules/frontend/forms.mdc
 - Pick/Omit/Partial zinciri (type-soup).
 - Magic string → literal/Zod enum kullan.
 - IUser, TUser prefix.
+- Bileşenlerde gereksiz `: React.ReactElement` return tipi.
 
 ## Always Do
 

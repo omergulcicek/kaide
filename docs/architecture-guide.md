@@ -28,7 +28,7 @@ Ortaklaştırma sadece aşağıdaki katmanlarda yapılır:
 Framework-spesifik kabul edilen ve ortak wrapper YAZILMAYACAK alanlar:
 
 * Rendering modeli:
-  * Next: RSC, Server Components, streaming, segment config
+  * Next.js 16: RSC, Server Components, streaming, segment config
   * Start: client/server component ayrımı farklı lifecycle ile çalışır
 * Data fetching + caching:
   * Next: server prefetch, RSC cache, revalidation davranışı
@@ -37,7 +37,7 @@ Framework-spesifik kabul edilen ve ortak wrapper YAZILMAYACAK alanlar:
   * Next: Server Actions
   * Start: serverFn
 * Routing/layout:
-  * Next: App Router layouts/segments
+  * Next.js 16: App Router layouts.
   * Start: file-based routing + loaders
 
 Kural: Bu başlıktaki alanlar Shared katmana taşınmaz ve tek bir abstraction altında birleştirilmez.
@@ -79,19 +79,21 @@ src/
 ├── app/ | routes/        # Routing layer
 ├── features/             # Domain & business logic
 │   └── [feature-name]/
-│       ├── api/          # API calls
-│       ├── components/   # Feature UI
-│       ├── hooks/        # Feature logic
-│       ├── schemas/      # Zod models
-│       ├── stores/       # Feature state
-│       ├── types/        # TS types
-│       └── index.ts      # Public API
+│       ├── api/
+│       ├── components/
+│       ├── helpers/
+│       ├── hooks/
+│       ├── schemas/
+│       ├── stores/
+│       ├── types/
+│       └── index.ts
 ├── components/
 │   ├── ui/               # Atomic (shadcn)
 │   ├── shared/           # Reusable functional
 │   └── layout/           # Layout parts
-├── hooks/                # Generic hooks
-├── lib/                  # SDK, utils, axios, config
+├── helpers/              # Shared helpers
+├── hooks/
+├── lib/
 ├── providers/            # Global context
 ├── stores/               # Global state
 ├── schemas/              # Shared validation
@@ -137,12 +139,13 @@ Bir feature başka bir feature'ın store'una veya hook'una erişemez. İletişim
 3. Ortak kod global katmanda tutulur
 4. Tekrar eden logic global’e taşınır
 5. Feature dışa açılımı sadece `index.ts`
-6. API layer UI’dan ayrıdır
+6. API layer UI'dan ayrıdır
+7. Helper'lar: feature → `features/[feature]/helpers/`, paylaşılan → `helpers/`. index.ts export'ları gruplanmış (components, hooks, types vb.)
 
 ## Architecture Type
 
 * Feature-based
 * Hybrid (global core + feature modules)
 * Scalable for large teams
-* Next.js & TanStack Start compatible
+* Next.js 16 & TanStack Start compatible
 * AI-oriented structure

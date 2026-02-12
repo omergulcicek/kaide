@@ -25,6 +25,7 @@ alwaysApply: true
   - Standart dışı/hatalı yapı → best-practice uygula + kısa teknik uyarı.
 - **Boy Scout:** Dokunulan dosyada unused import sil, `console.log` kaldır, ölü kod temizle.
 - **Naming:** Dosya/klasör → `kebab-case`.
+- **index.ts:** Export’lar gruplanmış (components, hooks, types vb.). Ref: docs/architecture-guide.md
 - **No Silent Failures:** Hata yutmak yasak. İzlenebilir error handling zorunlu.
 - **Secret Protection:** `.env`, token, key, credential içeriği gösterme/loglama/üretme.
 - **Dependency:** Yeni paket öncesi mevcut çözüm kontrol; gerekiyorsa onay.
@@ -33,6 +34,7 @@ alwaysApply: true
 
 ## Yasaklar (Bans) — SSOT bu dosya
 
+- Yorum satırları (self-documenting code; JSDoc sadece karmaşık logic’te ilgili .mdc’ye göre).
 - Placeholder snippet veya eksik kod (istisna: `INTENTIONAL_TODO` / `INTENTIONAL_ELLIPSIS`).
 - Silent catch: `catch (e) {}` veya boş catch.
 - Secret içeriği loglama/üretme.

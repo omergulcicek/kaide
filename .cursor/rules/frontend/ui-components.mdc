@@ -33,6 +33,9 @@ Ref: .cursor/rules/frontend/api.mdc (HTTP/data fetching yasağı SSOT), .cursor/
   Ref: .cursor/rules/frontend/typescript.mdc
 - **Loading:** Async veri tüketen bileşen → [ComponentName]Skeleton zorunlu. Base: @/components/ui/skeleton.
   Skeleton boyut/spacing/yapı gerçek bileşenle eşleşir.
+- **Layout:** Header/Footer layout’ta; page içinde değil.
+- **Tablo:** Gelişmiş (sorting, pagination, column filter, visibility, reorder) → TanStack Table. Basit düz tablo → shadcn Table.
+- **Web Vitals:** CLS engellenmeli (sabit boyut/skeleton/reserve space); LCP, FID, INP kriterlerine dikkat.
 - **A11y:** Semantic layout (main, nav, aside, section, article). Interactive → görünür focus.
   Icon-only button → aria-label. Dekoratif → aria-hidden="true".
 
