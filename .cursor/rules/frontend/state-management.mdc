@@ -36,19 +36,14 @@ alwaysApply: false
 
 ### 5.1) Hydration Guard Hook
 
-Tüm hydration kontrolleri için bu merkezi hook kullanılmalıdır.
+Tüm hydration kontrolleri için merkezi hook kullanılmalıdır: **`src/hooks/use-hydrated.ts`**. Implementasyon tek kaynak orada tutulur; kuralda kod tekrarlanmaz.
 
-```ts
-// src/hooks/use-hydrated.ts
-import { useEffect, useState } from "react";
+Kullanım örneği (guard pattern):
 
-export function useHydrated() {
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
-  return hydrated;
-}
+```tsx
+const isHydrated = useHydrated();
+const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+const isOpen = isHydrated ? sidebarOpen : false; // Guard: SSR markup ile eşleşen fallback
 ```
 
 ### 5.2) Store Definition (Deterministic Init)
@@ -57,13 +52,7 @@ Store oluşturulurken side-effect (localStorage erişimi vb.) içeren değerler 
 
 ### 5.3) Component Implementation (The Guard Pattern)
 
-LLM, client-specific state tüketen her bileşende `useHydrated` + tek satır guard kullanılmalıdır.
-
-```tsx
-const isHydrated = useHydrated();
-const sidebarOpen = useUIStore((s) => s.sidebarOpen);
-const isOpen = isHydrated ? sidebarOpen : false; // Guard: SSR markup ile eşleşen fallback
-```
+Client-specific state tüketen her bileşende 5.1'deki guard pattern zorunludur.
 
 ### 5.4) Kritik Kurallar (LLM Guardrails)
 
