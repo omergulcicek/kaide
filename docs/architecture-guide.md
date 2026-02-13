@@ -95,6 +95,6 @@ This document is the architectural map. Enforceable laws are located in:
 - `Ref: .cursor/rules/frontend/state-management.mdc`
 - `Ref: .cursor/rules/frontend/tanstack-query.mdc`
 - `Ref: .cursor/rules/frontend/tanstack-start.mdc`
-- `Ref: .cursor/rules/frontend/test.mdc`
+- `Ref: .cursor/rules/frontend/testing.mdc`
 - `Ref: .cursor/rules/frontend/typescript.mdc`
 - `Ref: .cursor/rules/frontend/ui-components.mdc`
