@@ -1,6 +1,6 @@
 # Architecture Constitution
 
-## 1. Technical Stack (SSOT)
+## Technical Stack (SSOT)
 
 | Layer | Technology | Authority (Rule Ref) |
 | :--- | :--- | :--- |
@@ -10,22 +10,22 @@
 | **UI / Styling** | shadcn/ui + Tailwind | `ui-components.mdc` |
 | **API Client** | Axios (Centralized) | `api.mdc` |
 
-## 2. Framework Isolation Boundary
+## Framework Isolation Boundary
 
-Parallel architecture for Next.js 16 and TanStack Start is enforced. Creating abstractions or wrappers for the following areas is FORBIDDEN; use native framework patterns:
+Implementation details for Next.js and TanStack Start are strictly segregated. Framework-specific patterns are delegated to their respective .mdc rules.
 
-- **Data Fetching:** Next.js (RSC/Prefetch) vs. TanStack Start (Loaders).
-- **Mutations:** Next.js (Server Actions) vs. TanStack Start (serverFn).
-- **Routing:** App Router Layouts vs. File-based routes.
-- **Shared Layer:** Reserved strictly for framework-agnostic code (`shared/schemas`, `ui-primitives`).
+- **Next.js 16:** See `.cursor/rules/frontend/nextjs.mdc`
+- **TanStack Start:** See `.cursor/rules/frontend/tanstack-start.mdc`
 
-## 3. Global Directory Hierarchy
+**Shared Layer:** Reserved strictly for framework-agnostic code (`shared/schemas`, `ui-primitives`).
+
+## Global Directory Hierarchy
 
 Adhere strictly to the following tree structure. Creating arbitrary folders is FORBIDDEN:
 
 ```text
 src/
-├── app/ | routes/        # Routing layer
+├── app/ | routes/        # Routing layer (See Framework Rules)
 ├── features/             # Domain & business logic
 │   └── [feature-name]/
 │       ├── api/
@@ -55,7 +55,7 @@ src/
 └── env.ts                # Env validation
 ```
 
-## 4. Shared vs. Feature Matrix (The Rule of Three)
+## Shared vs. Feature Matrix (The Rule of Three)
 
 Apply the following metric hierarchy to determine code location:
 
@@ -66,7 +66,7 @@ Apply the following metric hierarchy to determine code location:
 - **Lib:** Contains project-specific configured instances of external libraries. Components MUST import the wrapped instance from `src/lib` rather than the external package directly.
 - **Zod Schemas:** All feature-related schemas MUST be stored in `features/[feature]/schemas/`. API functions and UI components MUST import from this single source to prevent duplication.
 
-## 5. Server State & Ownership
+## Server State & Ownership
 
 Server state is global, but access is hierarchical:
 
@@ -74,13 +74,14 @@ Server state is global, but access is hierarchical:
 - **Invalidation:** Cross-feature cache invalidation is permitted only via the global `Query Key Factory`.
 - **Defaults:** StaleTime: ~60s (Lists), ~5m (Details). Centralized management: `src/providers/query-provider.tsx`.
 
-## 6. Rendering & Access Control
+## Rendering & Access Control
 
-- **Server-First:** Data fetching MUST be completed in the topmost Server Component.
-- **Client Boundary:** `"use client"` is mandatory only for interactive "leaf" nodes.
+Rendering strategies (RSC vs Client) and Data Fetching patterns are governed by the active framework's specific rule file.
+
 - **No HTTP in UI:** UI layer is FORBIDDEN from using `axios` or `fetch` directly. Consume only `features/api` functions.
+- **Insecure Scripts:** All content MUST adhere to the project's Content Security Policy; `unsafe-inline` and `unsafe-eval` are strictly forbidden.
 
-## 7. Canonical Rules (MDC Refs)
+## Canonical Rules (MDC Refs)
 
 This document is the architectural map. Enforceable laws are located in:
 
@@ -88,8 +89,12 @@ This document is the architectural map. Enforceable laws are located in:
 - `Ref: .cursor/rules/frontend/api.mdc`
 - `Ref: .cursor/rules/frontend/forms.mdc`
 - `Ref: .cursor/rules/frontend/i18n.mdc`
+- `Ref: .cursor/rules/frontend/nextjs.mdc`
+- `Ref: .cursor/rules/frontend/performance.mdc`
 - `Ref: .cursor/rules/frontend/react-best-practices.mdc`
 - `Ref: .cursor/rules/frontend/state-management.mdc`
 - `Ref: .cursor/rules/frontend/tanstack-query.mdc`
+- `Ref: .cursor/rules/frontend/tanstack-start.mdc`
+- `Ref: .cursor/rules/frontend/test.mdc`
 - `Ref: .cursor/rules/frontend/typescript.mdc`
 - `Ref: .cursor/rules/frontend/ui-components.mdc`

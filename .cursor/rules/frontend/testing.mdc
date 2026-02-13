@@ -1,0 +1,62 @@
+---
+description: "USE WHEN: Writing unit, integration, or component tests. Mandatory for logic in features."
+globs: "**/*.{test,spec}.{ts,tsx}"
+alwaysApply: false
+---
+
+# Testing Constitution (Vitest-First)
+
+## Constraints
+
+- **Framework:** Use `Vitest` for logic and `React Testing Library` for components.
+- **Pattern:** Follow AAA (Arrange, Act, Assert).
+- **Behavior over Implementation:** Test what the user sees/interacts with, not the internal state or private functions.
+- **Location:** Place tests next to the implementation (e.g., `api/get-user.ts` -> `api/get-user.test.ts`).
+- **Mocking:** Use `MSW` (Mock Service Worker) for API calls. Forbidden to mock Zod schemas or business logic.
+- **Coverage:** Minimum 80% coverage for `features/helpers` and `features/logic`.
+
+## Bans
+
+- **Implementation Testing:** Forbidden to test internal component state or private methods.
+- **Snapshots:** Forbidden to use snapshots for large UI trees (causes maintenance hell).
+- **Manual Mocks:** Forbidden to use `vi.mock` for local logic; prefer real instances.
+- **Hardcoded Data:** Forbidden to use raw strings/numbers; use factories or fixed fixtures.
+
+## Correct Implementation
+
+<example>
+// Testing feature logic (Vitest)
+import { calculateTotal } from '../helpers/cart';
+
+describe('calculateTotal', () => {
+  it('should apply discount correctly', () => {
+    const result = calculateTotal({ price: 100, discount: 20 }); // Arrange & Act
+    expect(result).toBe(80); // Assert
+  });
+});
+</example>
+
+<example>
+// Testing UI Behavior (Vitest + RTL)
+import { render, screen, fireEvent } from '@testing-library/react';
+
+it('should trigger login on click', () => {
+  const spy = vi.fn();
+  render(<LoginForm onSubmit={spy} />);
+  
+  fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@test.com' } });
+  fireEvent.click(screen.getByRole('button', { name: /login/i }));
+  
+  expect(spy).toHaveBeenCalledWith(expect.objectContaining({ email: 'test@test.com' }));
+});
+</example>
+
+## Incorrect Implementation
+
+<incorrect-example>
+// BAN: Testing implementation details (useState)
+it('should update internal count state', () => {
+  const wrapper = render(<Counter />);
+  expect(wrapper.state('count')).toBe(1); // Internal state testing is forbidden
+});
+</incorrect-example>

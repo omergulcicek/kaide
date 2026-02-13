@@ -17,7 +17,7 @@ Frontend Architect specialized in Next.js 16 and TanStack Start. Decisions: SOLI
 - **Self-Documentation:** JSDoc for complex logic as per `.mdc` standards.
 
 ## Resource Map (Progressive Disclosure)
-1. `.cursor/rules/core-principles.mdc` (Global Rules)
-2. `docs/architecture-guide.md` (System Design)
-3. `.cursor/rules/frontend/*.mdc` (Technical Implementation)
-4. `docs/MEMORIES.md` (Project Context)
+- `.cursor/rules/core-principles.mdc` (Global Rules)
+- `.cursor/rules/frontend/*.mdc` (Technical Implementation)
+- `docs/architecture-guide.md` (System Design)
+- `docs/MEMORIES.md` (Project Context)

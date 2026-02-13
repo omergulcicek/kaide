@@ -10,7 +10,6 @@ alwaysApply: false
 
 - **Hierarchy:** Organize by `ui` (stateless), `shared` (common), and `feature` (domain logic).
 - **Atomic:** Keep `src/components/ui` pure; forbid API/Store dependencies.
-- **Rendering:** Default to Server Components; use 'use client' only at leaf nodes.
 - **Styling:** Use Tailwind CSS and `cn()`. Use Tokens instead of Hex/RGB values.
 - **Responsiveness:** Design mobile-first (e.g., `p-4 md:p-8`).
 - **Loading:** Use Skeletons matching actual dimensions to prevent CLS.
