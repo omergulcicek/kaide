@@ -9,12 +9,13 @@ alwaysApply: false
 
 - **Route Definition:** Always use `createFileRoute`. Path MUST strictly match the file system location.
 - **Component Scope:** Keep route files thin. Only orchestrate routing and data. Move UI and business logic to `src/features`.
+- **Nested Layouts:** Use the `<Outlet />` component in parent routes to render child routes. If a route has children, the parent component MUST render `<Outlet />`.
 - **Data Loading:** Fetch all route-level data in `loader`. Consume via `Route.useLoaderData` or `useSuspenseQuery`.
 - **Guards:** Put auth, redirects, and preconditions in `beforeLoad`.
-- **Hydration:** For Next.js RSC, use dehydrate(queryClient) pattern. For Start, use loader prefetching.
+- **Hydration:** Rely on loader prefetching for data hydration. Do not use Next.js-specific patterns like manual dehydration.
 - **Server Functions:** Wrap all backend-only logic in standalone `serverFn`. Functions MUST act as a bridge to the API layer; keep database orchestration and business logic inside src/features/api or helpers.
 - **Search Params:** Validate all search params with `validateSearch` using a Zod schema. Never trust raw search values.
-- **i18n Implementation:** Use `paraglide-js` for translations. Import messages from `@/paraglide/messages`.
+- **i18n Implementation:** Use `paraglide-js` for translations. Follow the patterns defined in `i18n.mdc`.
 - **Error Handling:** Provide `errorComponent` for failure states. Handle expected errors in the loader.
 - **Loading UI:** Provide `pendingComponent` for async states when needed.
 - **Not Found:** Provide `notFoundComponent` for missing resources.

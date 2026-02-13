@@ -7,7 +7,7 @@ alwaysApply: false
 # Testing Guide (Pragmatic)
 
 ## Principles
-- **Value over Coverage:** Focus on testing complex business logic in `features/logic`. Skip simple UI components unless critical.
+- **Value over Coverage:** Focus on testing complex business logic in `features/[feature]`. Skip simple UI components unless critical.
 - [cite_start]**Behavior Testing:** Focus on user outcomes (Arrange-Act-Assert)[cite: 3].
 
 ## Tech Stack
