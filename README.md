@@ -4,6 +4,25 @@
 
 > **Kaide** (Etymology: Turkish): A fundamental rule, principle, or base that provides structural integrity. The name cleverly embeds **AI** (K**ai**de), reflecting its core mission.
 
+## Getting Started
+
+### Installation & Setup
+
+1. Run the CLI to automatically install the configuration files:
+
+   ```bash
+   npx kaide
+   ```
+2. (Recommended) For maximum adherence, point your AI tool to your identity in **Settings/Project Rules**:
+
+> **Adhere to `AGENTS.md` for persona/planning and `docs/` for architectural constitutions.**
+
+### Usage Workflow
+This kit follows a **Plan-First Protocol**:
+- **Initialize:** Ask the AI to read the rules: `Read all .mdc files and AGENTS.md.`
+- **Plan:** Propose a feature: `I want to build a [Feature Name]. Create an architectural plan.`
+- **Execute:** After approving the plan, the AI will generate code following the strict constraints of the relevant `.mdc` files.
+
 ## The Problem We Solve
 
 **Kaide** provides the missing governance layer to turn AI from a simple coder into a high-level Staff Engineer.
@@ -27,25 +46,6 @@ The system operates on a **Three-Layer Governance** model:
 - **Zod-First Type Safety:** End-to-end type safety derived from schemas.
 - **Optimized for Modern Tech:** Seamless support for Next.js and TanStack Start for world-class web applications.
 - **Performance-First:** Built-in rules for LCP optimization, CLS prevention, and maximum efficiency.
-
-## Getting Started
-
-### Installation & Setup
-
-1. Run the CLI to automatically install the configuration files:
-
-   ```bash
-   npx kaide
-   ```
-2. (Recommended) For maximum adherence, point your AI tool to your identity in **Settings/Project Rules**:
-
-> **Adhere to `AGENTS.md` for persona/planning and `docs/` for architectural constitutions.**
-
-### Usage Workflow
-This kit follows a **Plan-First Protocol**:
-- **Initialize:** Ask the AI to read the rules: `Read all .mdc files and AGENTS.md.`
-- **Plan:** Propose a feature: `I want to build a [Feature Name]. Create an architectural plan.`
-- **Execute:** After approving the plan, the AI will generate code following the strict constraints of the relevant `.mdc` files.
 
 ## LLM Agnostic Usage
 While optimized for Cursor (`.mdc`), **Kaide** is built on pure Markdown and works with any "Agentic" AI (Claude Code, Windsurf, GitHub Copilot CLI, etc.):
