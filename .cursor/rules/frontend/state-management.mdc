@@ -1,62 +1,38 @@
 ---
-description: "USE WHEN: Zustand store, selector veya client state (SSR-safe hydration) yazıyorsan."
+description: "USE WHEN: Global state (Zustand) veya client state yönetiyorsan."
 globs: "src/stores/**/*.ts,src/features/**/stores/**/*.ts"
 alwaysApply: false
 ---
 
-# State Management (Zustand)
+# State Management
 
-**Boundary:** Global → `src/stores/[name].store.ts`. Feature → `src/features/[feature]/stores/[name].store.ts`.
-Feature store sadece kendi klasörü veya `index.ts` ile dışa açılır.
+## Constraints
 
-Ref: .cursor/rules/frontend/tanstack-query.mdc, .cursor/rules/frontend/api.mdc
+- **Library:** Client state için `Zustand` kullan.
+- **Scope:** Global `src/stores`, Feature `src/features/[feature]/stores`.
+- **Selectors:** State'i her zaman selector ile tüket (`useStore(s => s.val)`).
+- **SSR:** `useHydrated` ile client-side render'ı garanti et.
+- **Persistence:** `persist` middleware kullanıyorsan `onRehydrateStorage` ayarla.
+- **Server State:** TanStack Query kullan. Store'a koyma.
 
-## Kısıtlamalar (Constraints)
+## Bans
 
-- **Library:** Zustand zorunlu (client state tek stack).
-- **Server State:** API verisi → TanStack Query; store’da cache yok.
-  Ref: .cursor/rules/frontend/tanstack-query.mdc
-- **Client State:** UI durumu, form aşamaları, modal/sidebar.
-- **Naming:** Hook → `use[Name]Store`. Dosya → `kebab-case.store.ts`.
-- **Atomic Selector (Zorunlu):** State selector ile tüketilir. `useUserStore(s => s.user)`.
-- **Async:** Store içinde HTTP yok; async Hook veya API katmanında.
-  Ref: .cursor/rules/frontend/api.mdc
-- **SSR-Safe:** Init’te window, document, localStorage, Date() yok. Client-specific state → `useHydrated()` guard;
-  `src/hooks/use-hydrated.ts` tek kaynak. Persist: onRehydrateStorage. Layout shift önle: sabit boyut/skeleton.
-  Manuel hydrate() yok; UI’da useHydrated ile karar.
-- **Export:** Feature store → `src/features/[feature]/index.ts`.
-
-## Yasaklar (Bans)
-
-- Store verisini prop ile geçmek (alt bileşende selector kullan).
-- Yüksek frekanslı state (text input, scroll) store’da; local state kullan.
-- Store action’da side-effect; localStorage/window → middleware.
-- Ağır hesaplama selector’da; useMemo kullan.
-- Init’te window, Date(), Math.random().
-- Store içinde HTTP.
-  Ref: .cursor/rules/frontend/api.mdc
-- `const { user } = useUserStore();` (selector kullan).
+- Store verisini prop ile geçmek.
+- Yüksek frekanslı state'i (input) store'a koymak.
+- Store içinde side-effect (API çağrısı).
+- Init sırasında `window`/`localStorage` erişimi.
+- Selector kullanmadan tüm store'u dönmek.
 
 ## Always Do
 
 ```ts
 const user = useUserStore((s) => s.user);
-```
-
-```tsx
 const isHydrated = useHydrated();
-const sidebarOpen = useUIStore((s) => s.sidebarOpen);
-const isOpen = isHydrated ? sidebarOpen : false;
 ```
 
 ## Never Do
 
 ```ts
-const { user } = useUserStore();
-```
-
-```ts
-create((set) => ({
-  init: typeof window !== "undefined" ? localStorage.getItem("x") : null,
-}));
+const { user } = useUserStore(); // Selector yok
+const store = create(() => ({ data: localStorage.getItem("x") })); // SSR hata
 ```

@@ -5,41 +5,30 @@ alwaysApply: true
 
 # Core Constitution
 
-**Scope:** Tüm proje. Kapsam dışı: domain/framework kuralları → Ref listesi aşağıda.
+## Constraints
 
-**Ref:** docs/architecture-guide.md, .cursor/rules/frontend/*.mdc
+- **Placeholder:** "TODO", "stub" bırakma. İstisna: `INTENTIONAL_TODO`.
+- **Pseudo-code:** Yasak. Çalışır TypeScript/React kodu ver.
+- **Reference:** "Genelde böyle yapılır" deme; repo kuralına bağla.
+- **Validation:** `pnpm check-types` ve `pnpm lint` geçmeden teslim etme.
+- **Search First:** Kodlamadan önce mevcut pattern'leri incele.
+- **Minimal Intervention:** Sadece gerekli alanı değiştir.
+- **Source of Truth:** Kod tabanını referans al. Hatalıysa düzelt.
+- **Boy Scout:** Unused import, `console.log`, ölü kod temizle.
+- **Naming:** Dosya/klasör `kebab-case`.
+- **Exports:** `index.ts` ile grupla.
+- **No Silent Failures:** Hata yutma. `try/catch` bloklarını yönet.
+- **Secret Protection:** `.env` içeriğini loglama.
+- **Dependency:** Yeni paket için onay al.
 
-## Code Quality Guardrails
+## Bans
 
-- **Placeholder:** "TODO", "stub", "..." bırakma.
-  - **Tek istisna:** Kasıtlı ise açıkça `INTENTIONAL_TODO` veya `INTENTIONAL_ELLIPSIS` etiketle.
-- **Pseudo-code yok:** Her zaman çalışır TypeScript/React kodu ver.
-- **Belirsiz referans yok:** "Genelde böyle yapılır" kullanma; repo kuralına (Ref: …) bağla.
-- **Teslim öncesi doğrulama:** `pnpm check-types` ve `pnpm lint` geçmeden teslim etme.
-
-## Kısıtlamalar (Constraints)
-
-- **Search First:** Yeni kod öncesi mevcut pattern + benzer implementasyon incele.
-- **Minimal Intervention:** Sadece gerekli alan; kapsam dışı refactor yok.
-- **Source of Truth:** Kod tabanı birincil referans.
-  - Standart dışı/hatalı yapı → best-practice uygula + kısa teknik uyarı.
-- **Boy Scout:** Dokunulan dosyada unused import sil, `console.log` kaldır, ölü kod temizle.
-- **Naming:** Dosya/klasör → `kebab-case`.
-- **index.ts:** Export’lar gruplanmış (components, hooks, types vb.). Ref: docs/architecture-guide.md
-- **No Silent Failures:** Hata yutmak yasak. İzlenebilir error handling zorunlu.
-- **Secret Protection:** `.env`, token, key, credential içeriği gösterme/loglama/üretme.
-- **Dependency:** Yeni paket öncesi mevcut çözüm kontrol; gerekiyorsa onay.
-- **Validation:** Değişiklik sonrası type-check + linter uyumu. Commit → Conventional Commits.
-  - Ref: docs/architecture-guide.md
-
-## Yasaklar (Bans) — SSOT bu dosya
-
-- Yorum satırları (self-documenting code; JSDoc sadece karmaşık logic’te ilgili .mdc’ye göre).
-- Placeholder snippet veya eksik kod (istisna: `INTENTIONAL_TODO` / `INTENTIONAL_ELLIPSIS`).
-- Silent catch: `catch (e) {}` veya boş catch.
-- Secret içeriği loglama/üretme.
+- Yorum satırları (JSDoc hariç).
+- Placeholder/eksik kod.
+- `catch (e) {}` (Silent catch).
+- Secret loglama.
 - Kapsam dışı refactor.
-- `// ...existing code` ile partial diff; tam blok ver.
+- `// ...existing code` (Tam blok ver).
 
 ## Always Do
 
@@ -51,26 +40,8 @@ try {
 }
 ```
 
-```js
-export const Header = () => {
-  return (
-    <header>
-      <Logo />
-      <nav>New Link</nav>
-    </header>
-  );
-};
-```
-
 ## Never Do
 
 ```js
 try { process(data); } catch (e) {}
-```
-
-```js
-export const Header = () => {
-  // ...existing code
-  return <nav>New Link</nav>;
-};
 ```

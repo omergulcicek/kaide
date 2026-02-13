@@ -1,50 +1,37 @@
 ---
-description: "USE WHEN: Çeviri, locale veya i18n kurulumu (next-intl / Paraglide) ile uğraşıyorsan."
+description: "USE WHEN: Çeviri veya i18n işlemleri yapıyorsan."
 globs: "src/messages/**/*.json,src/i18n/**/*.{ts,tsx},src/features/**/index.ts"
 alwaysApply: false
 ---
 
 # Internationalization (i18n)
 
-**Boundary:** Çeviriler merkezi `src/messages/` (Next.js) veya `src/paraglide/` (TanStack). UI ham metin içeremez.
+## Constraints
 
-Ref: docs/architecture-guide.md
+- **Library:** Next.js için `next-intl`, TanStack için `paraglide-js` kullan.
+- **Keys:** Type-safe anahtarlar kullan. Magic string yasak.
+- **Structure:** Büyük feature'lar için namespace kullan (`profile.settings`).
+- **Components:** Alt bileşenlere çevrilmiş metin geç.
+- **Pluralization:** Kütüphanenin native plural özelliklerini kullan.
 
-## Kısıtlamalar (Constraints)
+## Bans
 
-- **Next.js:** `next-intl`; `useTranslations` (client) veya `getTranslations` (server).
-- **TanStack Start:** `paraglide-js`; derlenmiş mesaj fonksiyonları (`m.key_name()`) doğrudan kullanılır.
-- **Type-Safe Keys:** Çeviri anahtarları "magic string" olamaz; build-time tip kontrolü zorunlu.
-- **Parametric Values:** Dinamik metinlerde Paraglide veya next-intl; manuel string template/concatenation yasak.
-- **Feature-Based Scoping:** Büyük feature’larda anahtarlar feature ismiyle namespace edilir (örn. `profile.settings`).
-- **Zero-Hardcoded Policy:** Alt bileşenlere (button, label vb.) geçilen metinler mutlaka i18n katmanından gelir.
-- **Pluralization:**
-  - Next.js → mesajda ICU `{count, plural, ...}` + `t('key', { count })`.
-  - TanStack (Paraglide) → mesajda variant `count: plural` + derlenmiş fonksiyona `count` argümanı.
-    Sayıya göre manuel branch veya string birleştirme yasak.
-
-## Yasaklar (Bans)
-
-- UI bileşenleri içinde ham string (inline text).
-- `t("auth." + key)` gibi dinamik/hesaplanmış anahtar üretimi (type-safety kırılır).
-- Locale bilgisini `window.location` veya manuel URL parse ile çekmek.
-- JSON dosyalarında derin iç içe yapı (max 3 seviye hiyerarşi).
-- Layout shift’e sebep olacak asenkron çeviri yüklemeleri (pre-fetching zorunlu).
+- UI içinde hardcoded string.
+- Dinamik anahtar üretimi (`"auth." + key`).
+- `window.location` ile locale okumak.
+- JSON'da 3 seviyeden derin hiyerarşi.
+- Asenkron çeviri yüklemesi (Layout shift).
 
 ## Always Do
 
 ```tsx
-import { useTranslations } from "next-intl";
 const t = useTranslations("auth");
 return <button>{t("login")}</button>;
-
-import * as m from "@/paraglide/messages";
-return <button>{m.auth_login()}</button>;
 ```
 
 ## Never Do
 
 ```tsx
-const label = t("welcome") + " " + user.name;
-const text = messages[key];
+return <button>Login</button>;
+const label = t("welcome_" + type);
 ```

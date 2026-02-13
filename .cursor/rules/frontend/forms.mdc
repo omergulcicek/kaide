@@ -1,48 +1,41 @@
 ---
-description: "USE WHEN: Form bileşeni veya form şeması (react-hook-form + Zod) yazıyorsan."
+description: "USE WHEN: Form bileşeni veya şeması yazıyorsan."
 globs: "src/features/**/components/*Form*.tsx,src/features/**/schemas/*.ts"
 alwaysApply: false
 ---
 
 # Form Management
 
-**Boundary:** Form mantığı `react-hook-form`, validasyon `zod`. UI katmanı (`@/components/ui`) sadece görünüm.
+## Constraints
 
-Ref: .cursor/rules/frontend/ui-components.mdc, .cursor/rules/frontend/typescript.mdc
+- **Library:** `react-hook-form` + `@hookform/resolvers/zod` kullan.
+- **Schema:** Şemaları `features/[feature]/schemas/` dizininde tut.
+- **Defaults:** `defaultValues`'u şema üzerinden `z.infer` ile tam ver.
+- **Performance:** `watch` yerine `useWatch` veya `Controller` kullan.
+- **Submission:** `handleSubmit` kullan. `isSubmitting` ile çift tıklamayı engelle.
+- **Errors:** Sunucu hatalarını `setError` ile map'le.
 
-## Kısıtlamalar (Constraints)
+## Bans
 
-- **Library:** `react-hook-form` + `@hookform/resolvers/zod`.
-  Ref: .cursor/rules/frontend/ui-components.mdc
-- **Schema Location:** Form şemaları daima `features/[feature]/schemas/` dizininde.
-- **Initialization:** defaultValues şema üzerinden `z.infer` ile tam (exhaustive) verilir.
-  Ref: .cursor/rules/frontend/typescript.mdc
-- **Performance:** Tüm formu re-render eden `watch` yerine `useWatch` veya `Controller` bazlı atomik yapılar.
-- **Submission:** `handleSubmit` içinde `isSubmitting` ile çift tıklama engellenir.
-- **Error Mapping:** Sunucu hataları `setError` API’si ile ilgili `path`’lere atanır.
-
-## Yasaklar (Bans)
-
-- Native HTML `form` submit event’ini manuel yönetmek (daima `handleSubmit`).
-- Root seviyede `watch()` (performans kaybı).
-- Form içinde `useEffect` ile state senkronizasyonu (yerine `reset` veya `setValue`).
-- Form şemasını doğrudan bileşen dosyasında tanımlamak.
+- Native `form` submit event'ini manuel yönetmek.
+- Root seviyede `watch()`.
+- Form state'ini `useEffect` ile senkronize etmek.
+- Şemayı bileşen dosyasında tanımlamak.
+- `useState` ile form input yönetmek.
 
 ## Always Do
 
 ```tsx
-const amount = useWatch({ control, name: "amount" });
-
-const form = useForm<z.infer<typeof LoginSchema>>({
-  resolver: zodResolver(LoginSchema),
-  defaultValues: { email: "", password: "" }
+const form = useForm<z.infer<typeof Schema>>({
+  resolver: zodResolver(Schema),
+  defaultValues: { email: "" }
 });
+const email = useWatch({ control: form.control, name: "email" });
 ```
 
 ## Never Do
 
 ```tsx
-const values = watch();
-
-if (apiError) setMyLocalErrorState(apiError);
+const [email, setEmail] = useState("");
+const values = form.watch(); // Root watch
 ```

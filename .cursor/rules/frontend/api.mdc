@@ -1,116 +1,42 @@
 ---
-description: "USE WHEN: HTTP/API katmanı veya endpoint (client: axios+TanStack Query; server: fetch/cache) yazıyorsan."
+description: "USE WHEN: HTTP/API katmanı veya endpoint yazıyorsan."
 globs: "src/lib/api.ts,src/features/**/api/*.{ts,tsx}"
 alwaysApply: false
 ---
 
 # API Layer
 
-**Boundary:** Tüm HTTP çağrıları yalnızca `features/[feature]/api` içinde; UI doğrudan fetch/axios kullanmaz.
+## Constraints
 
-Ref: docs/architecture-guide.md, .cursor/rules/frontend/tanstack-query.mdc
+- **Location:** Tüm HTTP çağrılarını `features/[feature]/api` altına koy.
+- **Validation:** Input/Output için Zod kullan.
+- **Return Type:** Raw response dönme; typed data dön.
+- **Error Handling:** API hatalarını `AppError` formatına normalize et.
+- **Server Actions:** Sadece API katmanını çağır. DB erişimini server runtime'da tut.
+- **Config:** `baseURL`'i env'den al. Tek `axios` instance kullan (`src/lib/api.ts`).
+- **Interceptors:** Auth, locale, tenant işlemlerini interceptor'da yönet.
+- **Naming:** `verb-entity.api.ts` (örn: `get-users.api.ts`). Fonksiyon: `getUsers`.
 
-## Sorumluluk
+## Bans
 
-- Tüm endpoint’ler typed request/response ile tanımlanır; Zod-first validation zorunludur.
-- UI yalnızca bu katmandan export edilen typed fonksiyonları tüketir; endpoint URL veya HTTP detayı bilmez.
-
-## Fonksiyon Standardı
-
-- **Input:** Zod schema ile validate; validation olmadan veri kabul edilmez.
-- **Output:** Typed + validated data; raw response UI’a dönmez.
-- **Error:** Normalize edilmiş domain error (AppError); raw hata dışarı taşınmaz.
-
-## Server Entegrasyonu
-
-- **Next.js:** Server Actions yalnızca API layer ile konuşur; component/route doğrudan DB/secret’a gitmez.
-- **TanStack Start:** serverFn yalnızca API layer ile konuşur; aynı boundary geçerli.
-- **DB/Secret:** Veritabanı ve secret erişimi sadece server runtime’da,
-  API layer veya onu çağıran server entry (SA/RH/serverFn) içinde.
-
-## Error Handling
-
-- Global error mapping zorunlu; tüm API hataları tek tip (AppError) ile normalize edilir.
-- Raw error (axios/fetch exception) UI veya query katmanına taşınmaz.
-- Typed model: `{ code: string; message: string; status: number; details?: unknown }` (AppError SSOT).
-
-## Network Standardı
-
-- **baseURL:** Merkezi config’ten (env); feature içinde URL birleştirme yok.
-- **Timeout, retry, headers:** Tek yerden `src/lib/api`. Interceptor: request → auth, locale, tenant, trace;
-  response → unwrap, 401/refresh, retry (network/5xx).
-- **Auth token / cookie:** Merkezi ekleme; feature içinde header manuel set edilmez.
-
-## Kısıtlamalar (Constraints)
-
-- **Instance:** Tek `axios.create` → `src/lib/api.ts`. Tüm feature `@/lib/api` import.
-- **Base URL:** Env’den; instance içinde. Feature içinde URL birleştirme yok.
-- **Interceptor:**
-  - Request → auth, locale, tenant, trace.
-  - Response → unwrap, error → AppError, 401, refresh, retry (network/5xx).
-  - Token refresh: paralel 401 tek refresh; başarısız → global logout.
-- **AppError (SSOT):** `{ code, message, status, details? }`. Raw axios error UI/query katmanına taşınmaz.
-- **Yerleşim:** Endpoint fonksiyonları → `features/[feature]/api/`. Bileşen içinde HTTP/data fetching yasak.
-  (SSOT: bu dosya.)
-- **Naming:** Fonksiyon → getUser, getUsers, createUser; dosya → `verb-entity.api.ts`.
-- **Fonksiyon:** Tek endpoint; endpoint string sadece burada; axios instance; typed `Promise<ApiResponse<T>>`.
-- **TanStack Query:** Query layer axios kullanmaz; sadece API fonksiyonu çağırır.
-  GET→query, POST/PUT/PATCH/DELETE→mutation.
-  Ref: .cursor/rules/frontend/tanstack-query.mdc
-- **Invalidation:** Mutation sonrası ilgili entity key; liste+detay birlikte; karar query layer’da.
-- **Pagination:** Params: page, limit, sort, filters. Response: `{ items, total, page, limit }`. Parsing API katmanında.
-- **Upload:** multipart/form-data; Content-Type interceptor dışında set edilmez.
-- **Download:** responseType `blob`; dosya parsing API katmanında.
-- **Types:** Response → `features/[feature]/types`. Zod varsa API dönüşünde parse. UI raw response işlemez.
-- **Next.js server:** cache/revalidate/tag gereken yerde native fetch.
-  Örnek: `fetch(url, { cache, next: { revalidate, tags } })`.
-- **Server Action:** Tüm input Zod ile validate; hata → anlamlı AppError/validation mesajı.
-- **Secret/DB:** Sadece server boundary içinde.
-
-## Yasaklar (Bans) — SSOT bu dosya
-
-- Bileşen içinde `fetch` veya `axios` kullanımı (UI sadece typed API fonksiyonları tüketir).
-- Cross-feature API import (bir feature başka feature’ın api modülünü import etmez).
-- Untyped response kullanımı; runtime validation olmadan veri tüketimi.
+- UI bileşeni içinde `fetch`/`axios`.
 - Feature içinde `axios.create`.
-- Query içinde endpoint string veya axios.
-- Interceptor’ı feature’a koymak.
-- Raw axios/fetch error taşımak; AppError’a maplenmeden dışarı vermek.
-- Base URL’i feature içinde birleştirmek.
-- Next.js server’da cache/revalidate/tag gereken yerde axios kullanmak.
-- Server Action’da Zod validation atlamak.
-
-Ref: .cursor/rules/frontend/typescript.mdc
+- Cross-feature API import.
+- Untyped response kullanımı.
+- Query içinde endpoint string.
+- Raw error fırlatmak.
 
 ## Always Do
 
 ```ts
-import { api } from "@/lib/api";
-export const getUsers = async (): Promise<ApiResponse<User[]>> => {
+export const getUsers = async (): Promise<User[]> => {
   const { data } = await api.get("/users");
-  return data;
+  return UserSchema.array().parse(data);
 };
-```
-
-```ts
-useQuery({ queryKey: userKeys.list(), queryFn: getUsers });
 ```
 
 ## Never Do
 
-```ts
-const api = axios.create({ baseURL: "/api" });
-return api.get("/users/me");
-```
-
 ```tsx
-useEffect(() => { axios.get("/api/users/me"); }, []);
-```
-
-```ts
-useQuery({ queryKey: ["user"], queryFn: () => axios.get("/users/me") });
-```
-
-```ts
-// RSC/route handler, Next cache hedefleniyorsa axios kullanma
+useEffect(() => { axios.get("/users"); }, []);
 ```

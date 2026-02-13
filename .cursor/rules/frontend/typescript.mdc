@@ -1,92 +1,40 @@
 ---
-description: "USE WHEN: TypeScript/Zod tipi, şema veya generic yazıyorsan. Zod SSOT, zero-cast."
+description: "USE WHEN: TypeScript/Zod tipi veya generic yazıyorsan."
 globs: "**/*.{ts,tsx}"
 alwaysApply: false
 ---
 
 # TypeScript
 
-**Scope:** Tüm .ts/.tsx. Zod SSOT, sıfır assertion toleransı. Kapsam dışı: API/UI katman kuralları → Ref.
+## Constraints
 
-Ref: .cursor/rules/frontend/api.mdc, .cursor/rules/frontend/forms.mdc
+- **Zod-First:** API/Domain kontratları için Zod şeması yaz. Tipleri `z.infer` ile türet.
+- **Strict:** `strict: true` modunda çalış.
+- **Arrays:** `T[]` kullan. (`Array<T>` sadece nested ise).
+- **Enums:** `z.enum` veya `as const` object kullan. Native `enum` yasak.
+- **Immutability:** `readonly` veya `as const` kullan.
+- **Return Types:** Export edilen fonksiyonlarda return type yaz.
+- **Generics:** Constraint kullan (`T extends object`).
 
-## Kısıtlamalar (Constraints)
+## Bans
 
-- **Zod-First SSOT:** Domain/API kontratları yalnızca Zod şemaları; tipler `z.infer<typeof Schema>`.
-  Aynı yapı için hem interface hem type yazılamaz.
-- **type serbest:** Component props, local state, union/intersection, function signatures
-  — Zod’dan türetilmiş veya dar adapter; 3rd-party uyumsuzlukta adapter + dokümante.
-- **Naming:** IUser, TUser yasak → User, UserSchema.
-- **Arrays:** `T[]`; `Array<T>` sadece nested generic gerekince.
-- **Enums:** Native `enum` yasak. Kullan: `z.enum(["active","inactive"])` veya
-  `const X = ["a","b"] as const; type X = (typeof X)[number]`.
-- **Discriminated union:** `z.discriminatedUnion("type", [...])` + z.infer.
-- **Immutability:** readonly, Readonly<T>, as const. Şemada .readonly() veya Readonly<z.infer<...>>.
-- **Assertion:** `as AnyType` yasak. İstisna: `*.test.ts`, `*.spec.ts`. 3rd-party: adapter + Zod parse veya satisfies.
-- **satisfies:** Literal koruma; config gibi: `satisfies ApiConfig`.
-- **! yasak.** Alternatif: ?., ??, Zod parse/safeParse.
-- **any yasak.** Alternatif: unknown, constraint’li generic, Zod.
-- **Export fonksiyon:** return type zorunlu.
-- **Component return:** Gereksiz `: React.ReactElement` eklenmez; inference yeterli.
-- **DTO:** Sadece Zod + z.infer; UI/domain’de DTO doğrudan kullanılmaz; map/parse → domain.
-  Dış veri: unknown → Zod parse → domain. Type guard yerine şema parse.
-- **Generics:** any/unknown kaçış yasak; parametre constraint’li (T extends object, Record<string, unknown>, z.ZodType).
-  infer sadece utility/conditional; karmaşık nested ternary yasak.
-- **Template literal:** URL path, hex, özel ID → template literal type.
-- **Branded:** ID, para, miktar için. `as` tek izin: named factory içinde tek satır return; başka yerde yasak.
-- **Type-soup yasak:** Pick/Omit/Partial zinciri yok; her ihtiyaç ayrı Zod şeması + z.infer.
-- **Doğrulama:** Schema.safeParse / Schema.parse. Union ayrımı: type guard.
-
-## Yasaklar (Bans)
-
-- Aynı yapı için interface + type.
-- Native enum.
-- `as AnyType` (test/spec hariç), `!`.
-- any.
-- Export fonksiyonda return type atlamak.
-- DTO’yu UI/domain’e doğrudan taşımak.
-- Derin recursive types (3+ seviye).
-- Pick/Omit/Partial zinciri (type-soup).
-- Magic string → literal/Zod enum kullan.
-- IUser, TUser prefix.
-- Bileşenlerde gereksiz `: React.ReactElement` return tipi.
+- `any`.
+- `as Type` (Test hariç).
+- `!` (Non-null assertion).
+- Interface ve Type'ı aynı anda kullanmak.
+- `I` veya `T` prefix'i (`IUser`).
+- Type soup (`Pick<Omit<Partial<...>>>`).
 
 ## Always Do
 
 ```ts
-export const UserSchema = z.object({ id: z.string().uuid(), name: z.string().min(1) });
-export type User = z.infer<typeof UserSchema>;
-export function parseUser(data: unknown): User {
-  return UserSchema.parse(data);
-}
-```
-
-```ts
-export function getKey<T extends object, K extends keyof T>(obj: T, key: K): T[K] {
-  return obj[key];
-}
-```
-
-```ts
-type UserId = string & { readonly brand: "UserId" };
-function asUserId(id: string): UserId {
-  return id as UserId;
-}
+const UserSchema = z.object({ id: z.string() });
+type User = z.infer<typeof UserSchema>;
 ```
 
 ## Never Do
 
 ```ts
-interface IUser { id: string; }
-type TUser = { id: string; }
-```
-
-```ts
-const x = data as User;
-const y = ref!.current;
-```
-
-```ts
-// Partial<Pick<User,"name">> & Omit<User,"name">
-// ✅ UserUpdateSchema = UserSchema.partial({ name: true }); type UserUpdate = z.infer<...>
+interface IUser { id: any; }
+const user = data as User;
 ```
