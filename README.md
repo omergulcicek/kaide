@@ -57,6 +57,3 @@ While optimized for Cursor (`.mdc`), **Kaide** is built on pure Markdown and wor
 - **Zero Inline Script:** Strictly enforced CSP compliance.
 - **Locked Boundaries:** Server-only logic is isolated from client bundles.
 - **Optimized Assets:** Automatic enforcement of modern formats and performance patterns.
-
----
-Managed by **Kaide AI-Native Architecture**.
