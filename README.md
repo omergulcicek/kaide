@@ -1,11 +1,11 @@
 # Kaide
 
-A discipline-driven, **AI-native frontend architecture kit** for Next.js 16 and TanStack Start. Optimized for Cursor LLM and high-performance engineering.
+A discipline-driven, **AI-native frontend architecture kit** for Next.js 16 and TanStack Start. Optimized for high-performance engineering and AI-assisted development.
 
 > **Kaide** (Etymology: Turkish): A fundamental rule, principle, or base that provides structural integrity.
 
 ## The Problem We Solve
-Traditional boilerplates fail when used with LLMs because they lack explicit architectural constraints. This project solves:
+Traditional boilerplates fail when used with LLMs because they lack explicit architectural constraints. **Kaide** solves:
 - **Context Drift:** Prevents AI from mixing Next.js and TanStack patterns.
 - **Architectural Erosion:** Enforces strict feature-based modularity via global "Constitutions".
 - **Performance Degradation:** Hard-coded constraints to guarantee Lighthouse 95+ scores by default.
@@ -29,7 +29,7 @@ The system operates on a **Three-Layer Governance** model:
 ### Installation & Setup
 
 1. Copy the `.cursor/rules/` folder, `docs/` directory, and `AGENTS.md` file to your project root.
-2. (Recommended) For maximum adherence, point Cursor to your identity in **Settings > Project Rules**:
+2. (Recommended) For maximum adherence, point your AI tool to your identity in **Settings/Project Rules**:
 
 > **Adhere to `AGENTS.md` for persona/planning and `docs/` for architectural constitutions.**
 
@@ -38,6 +38,11 @@ This kit follows a **Plan-First Protocol**:
 - **Initialize:** Ask the AI to read the rules: `Read all .mdc files and AGENTS.md.`
 - **Plan:** Propose a feature: `I want to build a [Feature Name]. Create an architectural plan.`
 - **Execute:** After approving the plan, the AI will generate code following the strict constraints of the relevant `.mdc` files.
+
+## LLM Agnostic Usage
+While optimized for Cursor (`.mdc`), **Kaide** is built on pure Markdown and works with any "Agentic" AI (Claude Code, Windsurf, GitHub Copilot CLI, etc.):
+- All `.mdc` files are standard Markdown. No conversion is needed.
+- **Tip:** Simply tell your agent: *"Read all rules in `.cursor/rules/` and follow the `AGENTS.md` persona"* at the start of your session.
 
 ## Technical Standards
 | Layer | Tech Stack | Tooling |
@@ -51,4 +56,7 @@ This kit follows a **Plan-First Protocol**:
 ## Security & Performance
 - **Zero Inline Script:** Strictly enforced CSP compliance.
 - **Locked Boundaries:** Server-only logic is isolated from client bundles.
-- **Optimized Assets:** Automatic enforcement of `next/image` and modern formats.
+- **Optimized Assets:** Automatic enforcement of modern formats and performance patterns.
+
+---
+Managed by **Kaide AI-Native Architecture**.
