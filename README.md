@@ -1,6 +1,6 @@
 # Kaide
 
-A discipline-driven, **AI-native frontend architecture kit** for Next.js 16 and TanStack Start. Optimized for high-performance engineering and AI-assisted development.
+High-discipline **AI-native frontend architecture kit** for Next.js 16. Enforcing structural integrity and performance through autonomous agent protocols.
 
 > **Kaide** (Etymology: Turkish): A fundamental rule, principle, or base that provides structural integrity.
 
