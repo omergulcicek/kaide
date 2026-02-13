@@ -1,6 +1,6 @@
 # Kaide
 
-High-discipline **AI-native frontend architecture kit** for Next.js 16. Enforcing structural integrity and performance through autonomous agent protocols.
+High-discipline **AI-native frontend architecture kit** for modern React frameworks. Enforcing structural integrity and performance through autonomous agent protocols.
 
 > **Kaide** (Etymology: Turkish): A fundamental rule, principle, or base that provides structural integrity.
 
