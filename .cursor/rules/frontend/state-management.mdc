@@ -1,5 +1,5 @@
 ---
-description: "USE WHEN: Global state (Zustand) veya client state yönetiyorsan."
+description: "USE WHEN: Managing global client state with Zustand and handling client-side state logic."
 globs: "src/stores/**/*.ts,src/features/**/stores/**/*.ts"
 alwaysApply: false
 ---
@@ -8,31 +8,35 @@ alwaysApply: false
 
 ## Constraints
 
-- **Library:** Client state için `Zustand` kullan.
-- **Scope:** Global `src/stores`, Feature `src/features/[feature]/stores`.
-- **Selectors:** State'i her zaman selector ile tüket (`useStore(s => s.val)`).
-- **SSR:** `useHydrated` ile client-side render'ı garanti et.
-- **Persistence:** `persist` middleware kullanıyorsan `onRehydrateStorage` ayarla.
-- **Server State:** TanStack Query kullan. Store'a koyma.
+- **Library:** Use `Zustand` for client state.
+- **Scope:** Define Global state in `src/stores`, Feature state in `src/features/[feature]/stores`.
+- **Selectors:** Always consume state via selectors (`useStore(s => s.val)`).
+- **SSR:** Guarantee client-side rendering with `useHydrated`.
+- **Persistence:** Configure `onRehydrateStorage` when using `persist` middleware.
+- **Server State:** Use TanStack Query. Do not store server data in the global store.
 
 ## Bans
 
-- Store verisini prop ile geçmek.
-- Yüksek frekanslı state'i (input) store'a koymak.
-- Store içinde side-effect (API çağrısı).
-- Init sırasında `window`/`localStorage` erişimi.
-- Selector kullanmadan tüm store'u dönmek.
+- Passing store data via props.
+- Storing high-frequency state (e.g., inputs) in the store.
+- Executing side-effects (API calls) inside the store.
+- Accessing `window`/`localStorage` during initialization.
+- Returning the entire store without selectors.
 
-## Always Do
+## Correct Implementation
 
+<example>
 ```ts
 const user = useUserStore((s) => s.user);
 const isHydrated = useHydrated();
 ```
+</example>
 
-## Never Do
+## Incorrect Implementation
 
+<incorrect-example>
 ```ts
-const { user } = useUserStore(); // Selector yok
-const store = create(() => ({ data: localStorage.getItem("x") })); // SSR hata
+const { user } = useUserStore(); // Missing selector
+const store = create(() => ({ data: localStorage.getItem("x") })); // SSR Error
 ```
+</incorrect-example>

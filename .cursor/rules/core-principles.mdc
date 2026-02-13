@@ -1,5 +1,5 @@
 ---
-description: "USE WHEN: Tüm proje. Global guardrails; çelişkide bu dosya öncelikli."
+description: "USE WHEN: Applying core principles and enforcing global project constraints."
 alwaysApply: true
 ---
 
@@ -7,31 +7,35 @@ alwaysApply: true
 
 ## Constraints
 
-- **Placeholder:** "TODO", "stub" bırakma. İstisna: `INTENTIONAL_TODO`.
-- **Pseudo-code:** Yasak. Çalışır TypeScript/React kodu ver.
-- **Reference:** "Genelde böyle yapılır" deme; repo kuralına bağla.
-- **Validation:** `pnpm check-types` ve `pnpm lint` geçmeden teslim etme.
-- **Search First:** Kodlamadan önce mevcut pattern'leri incele.
-- **Minimal Intervention:** Sadece gerekli alanı değiştir.
-- **Source of Truth:** Kod tabanını referans al. Hatalıysa düzelt.
-- **Boy Scout:** Unused import, `console.log`, ölü kod temizle.
-- **Naming:** Dosya/klasör `kebab-case`.
-- **Exports:** `index.ts` ile grupla.
-- **No Silent Failures:** Hata yutma. `try/catch` bloklarını yönet.
-- **Secret Protection:** `.env` içeriğini loglama.
-- **Dependency:** Yeni paket için onay al.
+- **INTENTIONAL_TODO Rule:** Usage is ONLY permitted for non-functional placeholders (e.g., temporary mock UI, future logging). 
+- **Business Integrity:** Forbidden to use `INTENTIONAL_TODO` for business logic, error handling, or API integrations.
+- **Pseudo-code:** Forbidden. Provide working TypeScript/React code.
+- **Reference:** Do not say "Usually done like this"; link to repo rules.
+- **Validation:** Do not deliver without passing `pnpm check-types` and `pnpm lint`.
+- **Search First:** Analyze existing patterns before coding.
+- **Minimal Intervention:** Modify only necessary areas.
+- **Source of Truth:** Reference the codebase. Correct it if erroneous.
+- **Boy Scout:** Clean unused imports, `console.log`, and dead code.
+- **Naming:** `kebab-case` for folders/non-component files; `PascalCase` for React components.
+- **Exports:** Group exports with `index.ts`.
+- **No Silent Failures:** Do not swallow errors. Manage `try/catch` blocks.
+- **Secret Protection:** Do not log `.env` content.
+- **Dependency:** Obtain approval for new packages.
 
 ## Bans
 
-- Yorum satırları (JSDoc hariç).
-- Placeholder/eksik kod.
+- Comments (except JSDoc).
+- Placeholders/incomplete code.
 - `catch (e) {}` (Silent catch).
-- Secret loglama.
-- Kapsam dışı refactor.
-- `// ...existing code` (Tam blok ver).
+- Logging secrets.
+- Out-of-scope refactoring.
+- `// ...existing code` (Provide full blocks).
+- Standard `TODO` or `FIXME` comments.
+- Using `INTENTIONAL_TODO` to skip core logic implementation.
 
-## Always Do
+## Correct Implementation
 
+<example>
 ```js
 try {
   process(data);
@@ -39,9 +43,12 @@ try {
   throw new ProcessingError({ cause: error });
 }
 ```
+</example>
 
-## Never Do
+## Incorrect Implementation
 
+<incorrect-example>
 ```js
 try { process(data); } catch (e) {}
 ```
+</incorrect-example>

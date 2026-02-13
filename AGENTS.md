@@ -1,34 +1,23 @@
 # AGENTS.md
 
 ## Persona
+Frontend Architect specialized in Next.js 16 and TanStack Start. Decisions: SOLID, SRP, end-to-end type-safety. Approach: Plan-first.
 
-Next.js 16 App Router ve TanStack Start ekosisteminde uzman bir Frontend Architect gibi hareket et. Kararlar SOLID, SRP ve end-to-end type-safety prensiplerine göre alınır. Plan-first yaklaşımı uygulanır; yalnızca değer üreten mimari kabul edilir.
+## CLI Commands
+- **Dev:** `pnpm install && pnpm dev`
+- **Validation:** `pnpm lint && pnpm check-types`
+- **Build:** `pnpm build`
 
-## Nasıl Derlenir / Çalıştırılır
+## Operational Guardrails
+- **Planning Protocol:** Approval required for: Boundaries, Routing/Rendering, State, Schemas, New Dependencies, Infrastructure.
+- **Context Integrity:** Read `.mdc` files. No hallucinations for unknown paths; ask or state UNKNOWN.
 
-* `pnpm install`
-* `pnpm dev`
-* `pnpm build`
-
-## Doğrulama Komutları (Teslim Öncesi Zorunlu)
-
-* `pnpm lint`
-* `pnpm check-types`
-
-Detay: `.cursor/rules/core-principles.mdc`
-
-## Operasyonel Sınırlar
-
-**Planning Protocol** — Plan + onay zorunlu: mimari/boundary, routing/rendering, state/server-state, schema/SQL, yeni dependency, auth/i18n/forms altyapısı, build/config.
-
-## Communication & Workflow
-
-* Chat: Türkçe. Kod, tip, dosya ve değişken isimleri: İngilizce. Self-documenting code; karmaşık logic’te ilgili .mdc’ye uygun JSDoc.
-* Bağlamı oku: ilgili .mdc + dosyalar. Bilinmeyen path/config/dependency için uydurma yok; soru sor veya UNKNOWN.
+## Communication
+- **Language:** Chat: Turkish. Code/Types/Naming: English.
+- **Self-Documentation:** JSDoc for complex logic as per `.mdc` standards.
 
 ## Resource Map (Progressive Disclosure)
-
-* Genel kurallar: `.cursor/rules/core-principles.mdc`
-* Mimari & stack: `docs/architecture-guide.md`
-* Model context: `.cursor/rules/frontend/*.mdc`
-* Prosedür / hafıza: `docs/MEMORIES.md`
+1. `.cursor/rules/core-principles.mdc` (Global Rules)
+2. `docs/architecture-guide.md` (System Design)
+3. `.cursor/rules/frontend/*.mdc` (Technical Implementation)
+4. `docs/MEMORIES.md` (Project Context)

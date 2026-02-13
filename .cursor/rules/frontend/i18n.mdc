@@ -1,5 +1,5 @@
 ---
-description: "USE WHEN: Çeviri veya i18n işlemleri yapıyorsan."
+description: "USE WHEN: Implementing internationalization, translating content, and managing localization keys."
 globs: "src/messages/**/*.json,src/i18n/**/*.{ts,tsx},src/features/**/index.ts"
 alwaysApply: false
 ---
@@ -8,30 +8,34 @@ alwaysApply: false
 
 ## Constraints
 
-- **Library:** Next.js için `next-intl`, TanStack için `paraglide-js` kullan.
-- **Keys:** Type-safe anahtarlar kullan. Magic string yasak.
-- **Structure:** Büyük feature'lar için namespace kullan (`profile.settings`).
-- **Components:** Alt bileşenlere çevrilmiş metin geç.
-- **Pluralization:** Kütüphanenin native plural özelliklerini kullan.
+- **Library:** Use `next-intl` for Next.js, `paraglide-js` for TanStack.
+- **Keys:** Use type-safe keys. Magic strings are forbidden.
+- **Structure:** Use namespaces for large features (`profile.settings`).
+- **Components:** Pass translated text to child components.
+- **Pluralization:** Use the library's native pluralization features.
 
 ## Bans
 
-- UI içinde hardcoded string.
-- Dinamik anahtar üretimi (`"auth." + key`).
-- `window.location` ile locale okumak.
-- JSON'da 3 seviyeden derin hiyerarşi.
-- Asenkron çeviri yüklemesi (Layout shift).
+- Hardcoded strings in UI.
+- Dynamic key generation (`"auth." + key`).
+- Reading locale via `window.location`.
+- JSON hierarchy deeper than 3 levels.
+- Async translation loading (causes Layout shift).
 
-## Always Do
+## Correct Implementation
 
+<example>
 ```tsx
 const t = useTranslations("auth");
 return <button>{t("login")}</button>;
 ```
+</example>
 
-## Never Do
+## Incorrect Implementation
 
+<incorrect-example>
 ```tsx
 return <button>Login</button>;
 const label = t("welcome_" + type);
 ```
+</incorrect-example>

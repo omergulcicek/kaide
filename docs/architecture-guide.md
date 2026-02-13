@@ -1,78 +1,27 @@
-# architecture-guide.md
+# Architecture Constitution
 
-## Tech Stack
+## 1. Technical Stack (SSOT)
 
-* Server State: TanStack Query
-* Client State: Zustand (Next.js ve TanStack Start’ta aynı)
-* Validation: Zod
-* UI: shadcn/ui + TailwindCSS
-* i18n:
+| Layer | Technology | Authority (Rule Ref) |
+| :--- | :--- | :--- |
+| **Server State** | TanStack Query | `tanstack-query.mdc` |
+| **Client State** | Zustand | `state-management.mdc` |
+| **Validation** | Zod | `typescript.mdc` |
+| **UI / Styling** | shadcn/ui + Tailwind | `ui-components.mdc` |
+| **API Client** | Axios (Centralized) | `api.mdc` |
 
-  * Next.js → next-intl
-  * TanStack Start → Paraglide JS
-* API Layer: feature-based `features/[feature]/api`
-* SSR Server Calls:
+## 2. Framework Isolation Boundary
 
-  * Next.js → Server Actions / Route Handlers
-  * TanStack Start → serverFn
+Parallel architecture for Next.js 16 and TanStack Start is enforced. Creating abstractions or wrappers for the following areas is FORBIDDEN; use native framework patterns:
 
-## Framework Boundaries (Next.js vs TanStack Start)
+- **Data Fetching:** Next.js (RSC/Prefetch) vs. TanStack Start (Loaders).
+- **Mutations:** Next.js (Server Actions) vs. TanStack Start (serverFn).
+- **Routing:** App Router Layouts vs. File-based routes.
+- **Shared Layer:** Reserved strictly for framework-agnostic code (`shared/schemas`, `ui-primitives`).
 
-Bu proje framework-agnostic değildir. Next.js App Router ve TanStack Start farklı rendering ve data-fetching semantiklerine sahiptir.
-Ortaklaştırma sadece aşağıdaki katmanlarda yapılır:
+## 3. Global Directory Hierarchy
 
-* Domain + validation: `shared/schemas` (Zod), saf TS utils (framework import yok)
-* API contracts: request/response shape, error mapping, typed clients
-* UI primitives: shadcn/ui + design tokens (routing/rendering bağımlılığı yok)
-
-Framework-spesifik kabul edilen ve ortak wrapper YAZILMAYACAK alanlar:
-
-* Rendering modeli:
-  * Next.js 16: RSC, Server Components, streaming, segment config
-  * Start: client/server component ayrımı farklı lifecycle ile çalışır
-* Data fetching + caching:
-  * Next: server prefetch, RSC cache, revalidation davranışı
-  * Start: loader/serverFn lifecycle, hydration modeli
-* Mutations:
-  * Next: Server Actions
-  * Start: serverFn
-* Routing/layout:
-  * Next.js 16: App Router layouts.
-  * Start: file-based routing + loaders
-
-Kural: Bu başlıktaki alanlar Shared katmana taşınmaz ve tek bir abstraction altında birleştirilmez.
-Framework davranışı ilgili feature içinde, native pattern ile uygulanır.
-
-## Rule Index (Canonical Refs)
-
-Bu doküman sadece “mimari harita”dır. Uygulanabilir kurallar aşağıdaki MDC dosyalarındadır.
-Her kural ifadesi **Ref:** ile buraya bağlanmak zorundadır. Ref olmayan kural = geçersiz.
-
-* Ref: `.cursor/rules/core-principles.mdc`
-* Ref: `.cursor/rules/frontend/api.mdc`
-* Ref: `.cursor/rules/frontend/forms.mdc`
-* Ref: `.cursor/rules/frontend/i18n.mdc`
-* Ref: `.cursor/rules/frontend/react-best-practices.mdc`
-* Ref: `.cursor/rules/frontend/state-management.mdc`
-* Ref: `.cursor/rules/frontend/tanstack-query.mdc`
-* Ref: `.cursor/rules/frontend/typescript.mdc`
-* Ref: `.cursor/rules/frontend/ui-components.mdc`
-
-Ref formatı: `Ref: <path>` (tekil). Birden fazla kural varsa her biri ayrı Ref satırıyla verilir.
-
-## TanStack Query default policy (SSOT)
-
-Varsayılan değerler tek kaynak; override noktası aşağıda.
-
-| Policy   | Liste | Detail | Not |
-|----------|-------|--------|-----|
-| staleTime | ~60s | ~5m | İhtiyaca göre feature hook içinde override edilebilir. |
-| gcTime    | ~10m | ~10m | |
-| Retry/delay | Merkezi | — | 4xx retry yok. |
-
-**Override:** `src/providers/query-provider.tsx` (QueryClient defaultOptions). Feature düzeyi override: ilgili custom hook içinde `useQuery`/`useMutation` seçenekleri.
-
-## Folder Structure
+Adhere strictly to the following tree structure. Creating arbitrary folders is FORBIDDEN:
 
 ```text
 src/
@@ -89,63 +38,58 @@ src/
 │       └── index.ts
 ├── components/
 │   ├── ui/               # Atomic (shadcn)
-│   ├── shared/           # Reusable functional
-│   └── layout/           # Layout parts
-├── helpers/              # Shared helpers
-├── hooks/
-├── lib/
-├── providers/            # Global context
-├── stores/               # Global state
-├── schemas/              # Shared validation
-├── types/                # Global TS types
-├── constants/            # Static values
+│   ├── layout/           # Layout parts
+│   └── shared/           # Reusable functional
 ├── config/               # App/SEO config
-├── styles/               # Tailwind/base CSS
+├── constants/            # Static values
+├── helpers/              # Framework-agnostic pure functions
+├── hooks/
 ├── i18n/                 # Localization setup
+├── lib/                  # Third-party configurations
 ├── messages/             # Translations
+├── providers/            # Global context
+├── schemas/              # Shared validation
+├── stores/               # Global state
+├── styles/               # Tailwind/base CSS
+├── types/                # Global TS types
 └── env.ts                # Env validation
 ```
 
-## Next.js Client/Server Rule
+## 4. Shared vs. Feature Matrix (The Rule of Three)
 
-* Default: Server Component
-* `"use client"` yalnızca gerekli olduğunda
-* Data fetching öncelikle server tarafında
-* `features/[feature]/components` hem server hem client içerebilir
-* Client boundary en dar noktada tutulur
+Apply the following metric hierarchy to determine code location:
 
-## API & Server Boundary (High-Level Contract)
+- **Default Scope:** All logic and components originate within `features/[feature]/`.
+- **Promotion:** Any logic or component requested by 2 different features MUST be moved to the global `src/` (shared) layer.
+- **Cross-Import Ban:** Direct imports between features are FORBIDDEN. Communication is restricted to the `src/shared` layer or via prop-drilling at the Page level.
+- **Helpers:** Pure TypeScript functions that strictly transform input to output without side effects.
+- **Lib:** Contains project-specific configured instances of external libraries. Components MUST import the wrapped instance from `src/lib` rather than the external package directly.
+- **Zod Schemas:** All feature-related schemas MUST be stored in `features/[feature]/schemas/`. API functions and UI components MUST import from this single source to prevent duplication.
 
-Bu bölüm sadece sorumluluk ve boundary tanımıdır. Implementasyon kuralları Ref: `.cursor/rules/frontend/api.mdc`.
+## 5. Server State & Ownership
 
-* **Component’te HTTP yok:** Bileşen içinde HTTP çağrısı yazılmaz; UI yalnızca typed API fonksiyonlarını tüketir.
-* **Server-only işlemler:** Veritabanı, secret, headers/cookies erişimi yalnızca server runtime’da yapılır (Server Actions, Route Handlers, serverFn). Bu işlemler client’a taşınmaz.
-* **API layer framework’ü soyutlamaz:** API katmanı framework’ün data-fetching/mutation davranışını gizlemez; her framework kendi native pattern’i ile kullanır.
-* **Client/Server ayrımı:** Hangi kodun client’ta, hangisinin server’da çalışacağı framework runtime tarafından belirlenir; API layer bu ayrımı yapmaz.
+Server state is global, but access is hierarchical:
 
-## State Placement
+- **Ownership:** Every API hook belongs to its respective feature. Promote to `src/hooks/api` only if shared.
+- **Invalidation:** Cross-feature cache invalidation is permitted only via the global `Query Key Factory`.
+- **Defaults:** StaleTime: ~60s (Lists), ~5m (Details). Centralized management: `src/providers/query-provider.tsx`.
 
-* Tek feature → `features/[feature]/stores`
-* Paylaşılan → `src/stores`
+## 6. Rendering & Access Control
 
-## Cross-Feature Communication
+- **Server-First:** Data fetching MUST be completed in the topmost Server Component.
+- **Client Boundary:** `"use client"` is mandatory only for interactive "leaf" nodes.
+- **No HTTP in UI:** UI layer is FORBIDDEN from using `axios` or `fetch` directly. Consume only `features/api` functions.
 
-Bir feature başka bir feature'ın store'una veya hook'una erişemez. İletişim sadece 'Shared' katmanı veya 'Parent Component' üzerinden prop ile yapılır.
+## 7. Canonical Rules (MDC Refs)
 
-## Core Architecture Rules
+This document is the architectural map. Enforceable laws are located in:
 
-1. Tüm iş mantığı `features/` içinde
-2. Feature’lar birbirini doğrudan import etmez
-3. Ortak kod global katmanda tutulur
-4. Tekrar eden logic global’e taşınır
-5. Feature dışa açılımı sadece `index.ts`
-6. API layer UI'dan ayrıdır
-7. Helper'lar: feature → `features/[feature]/helpers/`, paylaşılan → `helpers/`. index.ts export'ları gruplanmış (components, hooks, types vb.)
-
-## Architecture Type
-
-* Feature-based
-* Hybrid (global core + feature modules)
-* Scalable for large teams
-* Next.js 16 & TanStack Start compatible
-* AI-oriented structure
+- `Ref: .cursor/rules/core-principles.mdc`
+- `Ref: .cursor/rules/frontend/api.mdc`
+- `Ref: .cursor/rules/frontend/forms.mdc`
+- `Ref: .cursor/rules/frontend/i18n.mdc`
+- `Ref: .cursor/rules/frontend/react-best-practices.mdc`
+- `Ref: .cursor/rules/frontend/state-management.mdc`
+- `Ref: .cursor/rules/frontend/tanstack-query.mdc`
+- `Ref: .cursor/rules/frontend/typescript.mdc`
+- `Ref: .cursor/rules/frontend/ui-components.mdc`

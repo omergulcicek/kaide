@@ -1,5 +1,5 @@
 ---
-description: "USE WHEN: React bileşeni, hook veya lifecycle tasarlıyorsan."
+description: "USE WHEN: Designing React components, implementing hooks, and managing component lifecycles."
 globs: "src/components/**/*.{ts,tsx},src/hooks/**/*.{ts,tsx}"
 alwaysApply: false
 ---
@@ -8,34 +8,38 @@ alwaysApply: false
 
 ## Constraints
 
-- **SRP:** Bileşenleri küçük tut (max 150 satır).
-- **Composition:** Prop drilling yerine `children` veya `slot` kullan.
-- **Naming:** Component `PascalCase`, hook `useCamelCase`.
-- **Hooks:** Business logic'i custom hook'a taşı.
-- **State:** State'i en yakın ortak ataya koy.
-- **Updates:** `setState(prev => ...)` kullan.
-- **Effects:** `useEffect` son çare. Event handler veya `useMemo` tercih et.
-- **Keys:** Listelerde stabil ID kullan (index yasak).
+- **SRP:** Keep components small (max 150 lines).
+- **Composition:** Use `children` or `slots` instead of prop drilling.
+- **Naming:** Use `PascalCase` for components, `useCamelCase` for hooks.
+- **Hooks:** Move business logic to custom hooks.
+- **State:** Lift state to the nearest common ancestor.
+- **Updates:** Use `setState(prev => ...)` for state updates.
+- **Effects:** Use `useEffect` as a last resort. Prefer event handlers or `useMemo`.
+- **Keys:** Use stable IDs for lists (index is forbidden).
 
 ## Bans
 
-- Prop drilling (>2 seviye).
-- Class component.
-- Dependency array'i eksik bırakmak.
-- Props'u state'e eşitlemek (Derived state kullan).
-- Render sırasında ağır hesaplama.
-- Bileşen içinde data fetching (API kuralı).
+- Prop drilling (>2 levels).
+- Class components.
+- Incomplete dependency arrays.
+- Syncing props to state (use Derived state).
+- Heavy computations during render.
+- Data fetching inside components (violation of API rules).
 
-## Always Do
+## Correct Implementation
 
+<example>
 ```tsx
 const stableHandler = useEvent(handler);
 useEffect(() => { stableHandler(data); }, [data]);
 ```
+</example>
 
-## Never Do
+## Incorrect Implementation
 
+<incorrect-example>
 ```tsx
-useEffect(() => { fetchData(); }, []); // Fetching yasak
-useEffect(() => { setVal(props.val); }, [props.val]); // Sync yasak
+useEffect(() => { fetchData(); }, []); // Fetching forbidden
+useEffect(() => { setVal(props.val); }, [props.val]); // Sync forbidden
 ```
+</incorrect-example>

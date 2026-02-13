@@ -1,21 +1,21 @@
 # MEMORIES
 
-Bu dosya, proje içinde alınan kritik teknik kararların, mimari tercihlerin ve önemli trade-off'ların kısa notlar halinde kaydedilmesi için kullanılır. AI, tekrar eden hataları önlemek ve tutarlı kararlar almak için bu kayıtları referans alır.
+This file serves as a registry for critical technical decisions, architectural choices, and significant trade-offs made within the project, recorded as concise notes. The AI references these records to prevent recurring errors and ensure consistent decision-making.
 
-## Güncelleme periyodu
+## Update Cadence
 
-- **Ne zaman ekle:** Mimari değişiklik, geniş kapsamlı refactor, yeni dependency/stack kararı, tekrarlanan hatanın çözümü veya önemli trade-off sonrası hemen yeni kayıt eklenir.
-- **Ne zaman güncelle:** Bir karar iptal edildiğinde veya geçersiz kaldığında ilgili madde güncellenir veya "Superseded by …" notu eklenir.
-- **Periyodik kontrol:** Her büyük milestone veya planlama öncesi bu dosya gözden geçirilir; artık geçerli olmayan maddeler arşivlenir veya kaldırılır.
+- **When to Add:** Add a new entry immediately following architectural changes, extensive refactoring, new dependency/stack decisions, resolutions to recurring errors, or significant trade-offs.
+- **When to Update:** Update relevant items when a decision is revoked or becomes obsolete, or append a "Superseded by ..." note.
+- **Periodic Review:** Review this file before every major milestone or planning phase; archive or remove items that are no longer valid.
 
-## Kayıt formatı
+## Entry Format
 
-Her kayıt aşağıdaki yapıda tutulur. Tarih `YYYY-MM-DD`, başlık kısa ve kararın özünü yansıtacak şekilde yazılır.
+Each entry adheres to the following structure. The date uses `YYYY-MM-DD` format, and the title should be concise, reflecting the essence of the decision.
 
 ```markdown
-## [YYYY-MM-DD] - Kısa karar başlığı
+## [YYYY-MM-DD] - Concise decision title
 
-- **Bağlam:** Kararın alındığı durum (opsiyonel, karmaşıksa yazılır).
-- **Karar:** Ne yapıldığı / ne tercih edildiği.
-- **Gerekçe:** Neden bu yol seçildi (tek satır yeterli).
+- **Context:** The situation surrounding the decision (optional, include if complex).
+- **Decision:** The action taken or preference selected.
+- **Rationale:** Why this path was chosen (one line is sufficient).
 ```

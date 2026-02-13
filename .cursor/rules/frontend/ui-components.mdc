@@ -1,5 +1,5 @@
 ---
-description: "USE WHEN: UI bileşeni, layout veya stil yazıyorsan."
+description: "USE WHEN: Building UI components, structuring layouts, and applying styles using Tailwind CSS."
 globs: "src/components/**/*.{ts,tsx},src/features/**/components/**/*.{ts,tsx}"
 alwaysApply: false
 ---
@@ -8,36 +8,40 @@ alwaysApply: false
 
 ## Constraints
 
-- **Hierarchy:** ui (stateless), shared (common), feature (domain logic).
-- **Atomic:** `src/components/ui` saf olsun; API/Store bağımlılığı yasak.
-- **Rendering:** Default Server Component; 'use client' sadece leaf seviyesinde.
-- **Styling:** Tailwind CSS ve `cn()` kullan. Hex/RGB yerine Token kullan.
-- **Responsiveness:** Mobile-first (`p-4 md:p-8`).
-- **Loading:** CLS engellemek için gerçek boyutlarla eşleşen Skeleton kullan.
-- **A11y:** Semantic HTML ve `aria` etiketleri zorunlu.
-- **Exports:** Sadece Named export.
+- **Hierarchy:** Organize by `ui` (stateless), `shared` (common), and `feature` (domain logic).
+- **Atomic:** Keep `src/components/ui` pure; forbid API/Store dependencies.
+- **Rendering:** Default to Server Components; use 'use client' only at leaf nodes.
+- **Styling:** Use Tailwind CSS and `cn()`. Use Tokens instead of Hex/RGB values.
+- **Responsiveness:** Design mobile-first (e.g., `p-4 md:p-8`).
+- **Loading:** Use Skeletons matching actual dimensions to prevent CLS.
+- **A11y:** Enforce semantic HTML and `aria` attributes.
+- **Exports:** Use Named exports only.
 
 ## Bans
 
-- Inline style.
+- Inline styles.
 - CSS Modules / styled-components.
-- Hex/RGB renk kullanımı (Token kullan).
-- Default export.
-- Atomic bileşen içinde data fetching.
-- `div` çorbası (Semantic tag kullan).
+- Hex/RGB color usage (use Tokens).
+- Default exports.
+- Data fetching inside atomic components.
+- `div` soup (use Semantic tags).
 
-## Always Do
+## Correct Implementation
 
+<example>
 ```tsx
 export const ProfileCard = ({ name }: { name: string }) => (
   <div className={cn("p-4", "bg-muted")}>{name}</div>
 );
 ```
+</example>
 
-## Never Do
+## Incorrect Implementation
 
+<incorrect-example>
 ```tsx
 export default function Button() {
   return <div style={{ color: "red" }}>Click</div>;
 }
 ```
+</incorrect-example>

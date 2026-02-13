@@ -1,5 +1,5 @@
 ---
-description: "USE WHEN: Form bileşeni veya şeması yazıyorsan."
+description: "USE WHEN: Constructing forms, validating inputs, and managing form state with Zod schemas."
 globs: "src/features/**/components/*Form*.tsx,src/features/**/schemas/*.ts"
 alwaysApply: false
 ---
@@ -8,23 +8,24 @@ alwaysApply: false
 
 ## Constraints
 
-- **Library:** `react-hook-form` + `@hookform/resolvers/zod` kullan.
-- **Schema:** Şemaları `features/[feature]/schemas/` dizininde tut.
-- **Defaults:** `defaultValues`'u şema üzerinden `z.infer` ile tam ver.
-- **Performance:** `watch` yerine `useWatch` veya `Controller` kullan.
-- **Submission:** `handleSubmit` kullan. `isSubmitting` ile çift tıklamayı engelle.
-- **Errors:** Sunucu hatalarını `setError` ile map'le.
+- **Library:** Use `react-hook-form` + `@hookform/resolvers/zod`.
+- **Schema:** Store schemas in `features/[feature]/schemas/`.
+- **Defaults:** Define `defaultValues` fully using `z.infer` from the schema.
+- **Performance:** Use `useWatch` or `Controller` instead of `watch`.
+- **Submission:** Use `handleSubmit`. Prevent double clicks with `isSubmitting`.
+- **Errors:** Map server errors using `setError`.
 
 ## Bans
 
-- Native `form` submit event'ini manuel yönetmek.
-- Root seviyede `watch()`.
-- Form state'ini `useEffect` ile senkronize etmek.
-- Şemayı bileşen dosyasında tanımlamak.
-- `useState` ile form input yönetmek.
+- Manually managing native `form` submit events.
+- Using `watch()` at the root level.
+- Synchronizing form state with `useEffect`.
+- Defining schemas inside component files.
+- Managing form inputs with `useState`.
 
-## Always Do
+## Correct Implementation
 
+<example>
 ```tsx
 const form = useForm<z.infer<typeof Schema>>({
   resolver: zodResolver(Schema),
@@ -32,10 +33,13 @@ const form = useForm<z.infer<typeof Schema>>({
 });
 const email = useWatch({ control: form.control, name: "email" });
 ```
+</example>
 
-## Never Do
+## Incorrect Implementation
 
+<incorrect-example>
 ```tsx
 const [email, setEmail] = useState("");
 const values = form.watch(); // Root watch
 ```
+</incorrect-example>

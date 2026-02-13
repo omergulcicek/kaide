@@ -1,5 +1,5 @@
 ---
-description: "USE WHEN: HTTP/API katmanı veya endpoint yazıyorsan."
+description: "USE WHEN: Defining HTTP requests, endpoints, and handling API responses."
 globs: "src/lib/api.ts,src/features/**/api/*.{ts,tsx}"
 alwaysApply: false
 ---
@@ -8,35 +8,39 @@ alwaysApply: false
 
 ## Constraints
 
-- **Location:** Tüm HTTP çağrılarını `features/[feature]/api` altına koy.
-- **Validation:** Input/Output için Zod kullan.
-- **Return Type:** Raw response dönme; typed data dön.
-- **Error Handling:** API hatalarını `AppError` formatına normalize et.
-- **Server Actions:** Sadece API katmanını çağır. DB erişimini server runtime'da tut.
-- **Config:** `baseURL`'i env'den al. Tek `axios` instance kullan (`src/lib/api.ts`).
-- **Interceptors:** Auth, locale, tenant işlemlerini interceptor'da yönet.
-- **Naming:** `verb-entity.api.ts` (örn: `get-users.api.ts`). Fonksiyon: `getUsers`.
+- **Location:** Place all HTTP calls under `features/[feature]/api`.
+- **Validation:** Use Zod for Input/Output validation.
+- **Return Type:** Return typed data, not raw responses.
+- **Error Handling:** Normalize API errors to `AppError` format.
+- **Server Actions:** Call the API layer only. Keep DB access within server runtime.
+- **Config:** Load `baseURL` from env. Use a single `axios` instance (`src/lib/api.ts`).
+- **Interceptors:** Manage Auth, locale, and tenant logic in interceptors.
+- **Naming:** `verb-entity.api.ts` (e.g., `get-users.api.ts`). Function: `getUsers`.
 
 ## Bans
 
-- UI bileşeni içinde `fetch`/`axios`.
-- Feature içinde `axios.create`.
-- Cross-feature API import.
-- Untyped response kullanımı.
-- Query içinde endpoint string.
-- Raw error fırlatmak.
+- `fetch`/`axios` inside UI components.
+- `axios.create` inside features.
+- Cross-feature API imports.
+- Using untyped responses.
+- Hardcoded endpoint strings in queries.
+- Throwing raw errors.
 
-## Always Do
+## Correct Implementation
 
+<example>
 ```ts
 export const getUsers = async (): Promise<User[]> => {
   const { data } = await api.get("/users");
   return UserSchema.array().parse(data);
 };
 ```
+</example>
 
-## Never Do
+## Incorrect Implementation
 
+<incorrect-example>
 ```tsx
 useEffect(() => { axios.get("/users"); }, []);
 ```
+</incorrect-example>

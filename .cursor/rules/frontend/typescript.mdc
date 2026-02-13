@@ -1,5 +1,5 @@
 ---
-description: "USE WHEN: TypeScript/Zod tipi veya generic yazıyorsan."
+description: "USE WHEN: Defining TypeScript types, Zod schemas, and generic constraints for type safety."
 globs: "**/*.{ts,tsx}"
 alwaysApply: false
 ---
@@ -8,33 +8,39 @@ alwaysApply: false
 
 ## Constraints
 
-- **Zod-First:** API/Domain kontratları için Zod şeması yaz. Tipleri `z.infer` ile türet.
-- **Strict:** `strict: true` modunda çalış.
-- **Arrays:** `T[]` kullan. (`Array<T>` sadece nested ise).
-- **Enums:** `z.enum` veya `as const` object kullan. Native `enum` yasak.
-- **Immutability:** `readonly` veya `as const` kullan.
-- **Return Types:** Export edilen fonksiyonlarda return type yaz.
-- **Generics:** Constraint kullan (`T extends object`).
+- **Zod-First:** Write Zod schemas for API/Domain contracts. Derive types via `z.infer`.
+- **Strict:** Operate in `strict: true` mode.
+- **Arrays:** Use `T[]`. Use `Array<T>` only for nested types.
+- **Enums:** Use `z.enum` or `as const` objects. Native `enum` is forbidden.
+- **Immutability:** Use `readonly` or `as const`.
+- **Return Types:** Explicitly define return types for exported functions.
+- **Generics:** Use constraints (`T extends object`).
 
 ## Bans
 
 - `any`.
-- `as Type` (Test hariç).
+- `as Type` (except in tests).
 - `!` (Non-null assertion).
-- Interface ve Type'ı aynı anda kullanmak.
-- `I` veya `T` prefix'i (`IUser`).
+- Using Interface and Type simultaneously.
+- `I` or `T` prefixes (`IUser`).
 - Type soup (`Pick<Omit<Partial<...>>>`).
+- Type soup (Pick<Omit<Partial<...>>> nesting > 2). 
+  Exception: Deriving Form schemas from API schemas using Zod's `.pick()`, `.omit()`, or `.extend()` is encouraged to maintain SSOT.
 
-## Always Do
+## Correct Implementation
 
+<example>
 ```ts
 const UserSchema = z.object({ id: z.string() });
 type User = z.infer<typeof UserSchema>;
 ```
+</example>
 
-## Never Do
+## Incorrect Implementation
 
+<incorrect-example>
 ```ts
 interface IUser { id: any; }
 const user = data as User;
 ```
+</incorrect-example>
