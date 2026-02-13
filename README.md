@@ -1,6 +1,6 @@
 # Kaide
 
-High-discipline **AI-native frontend architecture kit** for modern React frameworks. Enforcing structural integrity and performance through autonomous agent protocols.
+**AI-native** architecture kit for modern React. High-discipline protocols for autonomous agents.
 
 > **Kaide** (Etymology: Turkish): A fundamental rule, principle, or base that provides structural integrity. The name cleverly embeds **AI** (K**ai**de), reflecting its core mission.
 
