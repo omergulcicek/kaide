@@ -32,7 +32,11 @@ The system operates on a **Three-Layer Governance** model:
 
 ### Installation & Setup
 
-1. Copy the `.cursor/rules/` folder, `docs/` directory, and `AGENTS.md` file to your project root.
+1. Run the CLI to automatically install the configuration files:
+
+   ```bash
+   npx kaide
+   ```
 2. (Recommended) For maximum adherence, point your AI tool to your identity in **Settings/Project Rules**:
 
 > **Adhere to `AGENTS.md` for persona/planning and `docs/` for architectural constitutions.**
