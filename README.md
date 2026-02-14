@@ -11,7 +11,7 @@
 1. Run the CLI to automatically install the configuration files:
 
    ```bash
-   npx kaide
+   npx kaide init
    ```
 2. (Recommended) For maximum adherence, point your AI tool to your identity in **Settings/Project Rules**:
 
