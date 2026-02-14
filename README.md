@@ -4,7 +4,7 @@
 
 > **Kaide** (Etymology: Turkish): A fundamental rule, principle, or base that provides structural integrity. The name cleverly embeds **AI** (K**ai**de), reflecting its core mission.
 
-![Kaide](kaide-terminal.png)
+<img src="kaide.png" alt="Kaide" width="610px" />
 
 ## Getting Started
 
