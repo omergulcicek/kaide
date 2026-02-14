@@ -1,10 +1,10 @@
 # Kaide
 
-![Kaide](kaide.png)
-
 **AI-native** architecture kit for modern React. High-discipline protocols for autonomous agents.
 
 > **Kaide** (Etymology: Turkish): A fundamental rule, principle, or base that provides structural integrity. The name cleverly embeds **AI** (K**ai**de), reflecting its core mission.
+
+![Kaide](kaide-terminal.png)
 
 ## Getting Started
 
