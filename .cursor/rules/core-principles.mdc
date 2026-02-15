@@ -32,6 +32,7 @@ alwaysApply: true
 - `// ...existing code` (Provide full blocks).
 - Standard `TODO` or `FIXME` comments.
 - Using `INTENTIONAL_TODO` to skip core logic implementation.
+- Parent-relative imports (`../`, `../../`). Use path aliases only.
 
 ## Correct Implementation
 

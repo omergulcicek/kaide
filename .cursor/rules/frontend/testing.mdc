@@ -8,15 +8,15 @@ alwaysApply: false
 
 ## Principles
 - **Value over Coverage:** Focus on testing complex business logic in `features/[feature]`. Skip simple UI components unless critical.
-- [cite_start]**Behavior Testing:** Focus on user outcomes (Arrange-Act-Assert)[cite: 3].
+- **Behavior Testing:** Focus on user outcomes (Arrange-Act-Assert).
 
 ## Tech Stack
-- [cite_start]Vitest & React Testing Library[cite: 1, 12].
+- Vitest & React Testing Library.
 
 ## Preferences (Not Hard Rules)
-- [cite_start]**API:** Use `MSW` for stable features; simple mocks are okay for rapid prototyping[cite: 5, 8].
-- [cite_start]**Location:** Keep `.test.ts` next to implementation[cite: 4].
-- [cite_start]**Snapshots:** Use only for small, static data structures to prevent maintenance hell.
+- **API:** Use `MSW` for stable features; simple mocks are okay for rapid prototyping.
+- **Location:** Keep `.test.ts` next to implementation.
+- **Snapshots:** Use only for small, static data structures to prevent maintenance hell.
 
 ## Correct Approach
 <example>

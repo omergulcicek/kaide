@@ -25,11 +25,13 @@ Adhere strictly to the following tree structure. Creating arbitrary folders is F
 
 ```text
 src/
-├── app/ | routes/        # Routing layer (See Framework Rules)
-├── features/             # Domain & business logic
+├── app/ | routes/
+├── features/
 │   └── [feature-name]/
 │       ├── api/
 │       ├── components/
+│       ├── constants/
+│       ├── data/
 │       ├── helpers/
 │       ├── hooks/
 │       ├── schemas/
@@ -37,22 +39,23 @@ src/
 │       ├── types/
 │       └── index.ts
 ├── components/
-│   ├── ui/               # Atomic (shadcn)
-│   ├── layout/           # Layout parts
-│   └── shared/           # Reusable functional
-├── config/               # App/SEO config
-├── constants/            # Static values
-├── helpers/              # Framework-agnostic pure functions
+│   ├── icons/
+│   ├── layout/
+│   ├── shared/
+│   └── ui/
+├── config/
+├── constants/
+├── helpers/
 ├── hooks/
-├── i18n/                 # Localization setup
-├── lib/                  # Third-party configurations
-├── messages/             # Translations
-├── providers/            # Global context
-├── schemas/              # Shared validation
-├── stores/               # Global state
-├── styles/               # Tailwind/base CSS
-├── types/                # Global TS types
-└── env.ts                # Env validation
+├── i18n/
+├── lib/
+├── messages/
+├── providers/
+├── schemas/
+├── stores/
+├── styles/
+├── types/
+└── env.ts
 ```
 
 ## Shared vs. Feature Matrix (The Rule of Three)
@@ -62,9 +65,15 @@ Apply the following metric hierarchy to determine code location:
 - **Default Scope:** All logic and components originate within `features/[feature]/`.
 - **Promotion:** Any logic or component requested by 2 different features MUST be moved to the global `src/` (shared) layer.
 - **Cross-Import Ban:** Direct imports between features are FORBIDDEN. Communication is restricted to the `src/shared` layer or via prop-drilling at the Page level.
-- **Helpers:** Pure TypeScript functions that strictly transform input to output without side effects.
-- **Lib:** Contains project-specific configured instances of external libraries. Components MUST import the wrapped instance from `src/lib` rather than the external package directly.
+- **Helpers:** Pure TypeScript functions that strictly transform input to output without side effects. MUST NOT contain any package imports. (e.g., `isBrowser()`).
+- **Data:** Feature-specific static data (lists, config objects, constants). ONLY allowed within `features/[feature]/data/`.
+- **Lib:** Contains project-specific configured instances of external libraries (axios, date-fns, js-cookie, etc.). Files containing package imports MUST be placed here. Pure TS functions without package imports belong in `helpers`. (e.g., `isToday()` using date-fns goes to `lib`, `isBrowser()` goes to `helpers`).
 - **Zod Schemas:** All feature-related schemas MUST be stored in `features/[feature]/schemas/`. API functions and UI components MUST import from this single source to prevent duplication.
+
+## Imports
+
+- **Path Aliases:** Usage of path aliases is MANDATORY.
+- **Parent-Relative:** Parent-relative imports (`../`, `../../`) are FORBIDDEN. Use absolute path aliases.
 
 ## Server State & Ownership
 

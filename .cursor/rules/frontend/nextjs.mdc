@@ -54,7 +54,7 @@ export default async function DashboardPage() {
 // src/features/auth/actions/login.ts
 "use server";
 
-import { loginSchema } from "../schemas/login-schema";
+import { loginSchema } from "@/features/auth/schemas/login-schema";
 import { api } from "@/lib/api";
 
 export async function loginAction(formData: FormData) {
